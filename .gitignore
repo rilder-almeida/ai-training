@@ -7,6 +7,10 @@
 *.dll
 *.so
 *.dylib
+book.embeddings
+db_data/
+ollama/
+openwebui/
 
 # Test binary, built with `go test -c`
 *.test
