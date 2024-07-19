@@ -114,18 +114,24 @@ func (b *Board) saveBoard() {
 
 	var currentBoard strings.Builder
 
+	var blue int
+	var red int
+
 	for row := range rows {
+		currentBoard.WriteString("|")
 		for col := range cols {
 			cell := b.cells[col][row]
 			switch {
 			case !cell.hasPiece:
-				currentBoard.WriteString("empty,")
+				currentBoard.WriteString("🟢|")
 			default:
 				switch cell.color {
 				case colorBlue:
-					currentBoard.WriteString("blue,")
+					currentBoard.WriteString("🔵|")
+					blue++
 				case colorRed:
-					currentBoard.WriteString("red,")
+					currentBoard.WriteString("🔴|")
+					red++
 				}
 			}
 		}
@@ -168,7 +174,7 @@ func (b *Board) saveBoard() {
 			}
 		}
 
-		if currentBoard.String() == board.String() {
+		if strings.Compare(currentBoard.String(), board.String()) == 0 {
 			foundMatch = true
 		}
 
@@ -183,12 +189,43 @@ func (b *Board) saveBoard() {
 	}
 
 	// -------------------------------------------------------------------------
-	// Save a copy of this board.
+	// Save a copy of this board and extra information.
 
-	f, _ := os.Create("cmd/connect/board/board-files/" + uuid.NewString() + "txt")
+	f, _ := os.Create("cmd/connect/board/board-files/" + uuid.NewString() + ".txt")
 	defer f.Close()
 
 	f.WriteString(currentBoard.String())
+	f.WriteString("\n")
+
+	switch {
+	case blue == 1 && (red == 0 || red > 1):
+		fmt.Fprintf(f, "There is %d space occupied by a Blue marker and %d spaces occupied by Red markers on the game board.\n\n", blue, red)
+	case red == 1 && (blue == 0 || blue > 1):
+		fmt.Fprintf(f, "There are %d spaces occupied by Blue markers and %d space occupied by a Red marker on the game board.\n\n", blue, red)
+	case blue == 1 && red == 1:
+		fmt.Fprintf(f, "There is %d space occupied by a Blue marker and %d space occupied by a Red marker on the game board.\n\n", blue, red)
+	default:
+		fmt.Fprintf(f, "There are %d spaces occupied by Blue markers and %d spaces occupied by Red markers on the game board.\n\n", blue, red)
+	}
+
+	switch b.gameOver {
+	case true:
+		if b.lastWinner == "Tie Game" {
+			f.WriteString("The game is over and Red and Blue have tied the game.\n")
+		} else {
+			fmt.Fprintf(f, "The game is over and %s has won the game.\n", b.lastWinner)
+		}
+	default:
+		switch {
+		case blue > red:
+			f.WriteString("The Red player goes next and they should choose one of the following columns from the specified list:\n")
+		case red > blue:
+			f.WriteString("The Blue player goes next and they should choose one of the following columns from the specified list:\n")
+		case red == blue:
+			f.WriteString("If the Blue player goes next they should choose one of the following columns from the specified list:\n\n")
+			f.WriteString("If the Red player goes next they should choose one of the following columns from the specified list:\n")
+		}
+	}
 
 	b.print(boardWidth+3, padTop+4, "** SAVED **")
 }
@@ -415,10 +452,10 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner("🔴")
+			b.showWinner("Red", "🔴")
 			return
 		case blue == 4:
-			b.showWinner("🔵")
+			b.showWinner("Blue", "🔵")
 			return
 		}
 	}
@@ -448,10 +485,10 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner("🔴")
+			b.showWinner("Red", "🔴")
 			return
 		case blue == 4:
-			b.showWinner("🔵")
+			b.showWinner("Blue", "🔵")
 			return
 		}
 	}
@@ -491,10 +528,10 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner("🔴")
+			b.showWinner("Red", "🔴")
 			return
 		case blue == 4:
-			b.showWinner("🔵")
+			b.showWinner("Blue", "🔵")
 			return
 		}
 
@@ -537,10 +574,10 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner("🔴")
+			b.showWinner("Red", "🔴")
 			return
 		case blue == 4:
-			b.showWinner("🔵")
+			b.showWinner("Blue", "🔵")
 			return
 		}
 
@@ -561,15 +598,15 @@ stop:
 	}
 
 	if tie {
-		b.showWinner("")
+		b.showWinner("", "")
 	}
 }
 
 // showWinner displays a modal dialog box.
-func (b *Board) showWinner(piece string) {
-	message := fmt.Sprintf("%s WINS", piece)
-	if piece == "" {
-		message = "TIE"
+func (b *Board) showWinner(color string, piece string) {
+	message := fmt.Sprintf("%s (%s)", color, piece)
+	if color == "" {
+		message = "Tie Game"
 	}
 
 	b.gameOver = true
