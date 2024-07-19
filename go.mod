@@ -5,6 +5,7 @@ go 1.22.4
 require (
 	code.sajari.com/docconv/v2 v2.0.0-pre.4
 	github.com/gdamore/tcell/v2 v2.7.4
+	github.com/google/uuid v1.6.0
 	github.com/mattn/go-runewidth v0.0.15
 	github.com/tmc/langchaingo v0.1.12
 	go.mongodb.org/mongo-driver v1.16.0
@@ -24,7 +25,6 @@ require (
 	github.com/gigawattio/window v0.0.0-20180317192513-0f5467e35573 // indirect
 	github.com/go-resty/resty/v2 v2.13.1 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/levigross/exp-html v0.0.0-20120902181939-8df60c69a8f5 // indirect

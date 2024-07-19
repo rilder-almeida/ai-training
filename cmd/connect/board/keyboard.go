@@ -39,6 +39,7 @@ func (b *Board) pollEvents() chan struct{} {
 
 				case rune(' '):
 					b.dropPiece(true)
+					b.saveBoard()
 				}
 			}
 
@@ -54,6 +55,7 @@ func (b *Board) pollEvents() chan struct{} {
 
 				case tcell.KeyEnter:
 					b.dropPiece(true)
+					b.saveBoard()
 				}
 			}
 		}

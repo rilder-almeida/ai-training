@@ -2,11 +2,16 @@
 package board
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
+	"io/fs"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/google/uuid"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -95,36 +100,91 @@ func (b *Board) Run() chan struct{} {
 	return b.pollEvents()
 }
 
-// Print display a version of the board.
-func (b *Board) Print() string {
-	// E,E,E,E,E,E,E
-	// E,E,E,E,E,E,E
-	// E,E,E,X,E,E,E
-	// E,E,E,X,E,E,E
-	// E,E,O,X,E,E,E
-	// E,X,O,O,O,E,
+func (b *Board) saveBoard() {
+	b.print(boardWidth+3, padTop+4, "           ")
 
-	var bld strings.Builder
+	// -------------------------------------------------------------------------
+	// Create a copy of the board.
+
+	var currentBoard strings.Builder
 
 	for row := range rows {
 		for col := range cols {
 			cell := b.cells[col][row]
 			switch {
 			case !cell.hasPiece:
-				bld.WriteString("-  ")
+				currentBoard.WriteString("empty,")
 			default:
 				switch cell.color {
 				case colorBlue:
-					bld.WriteString("O  ")
+					currentBoard.WriteString("blue,")
 				case colorRed:
-					bld.WriteString("X  ")
+					currentBoard.WriteString("red,")
 				}
 			}
 		}
-		bld.WriteString("\n")
+		currentBoard.WriteString("\n")
 	}
 
-	return bld.String()
+	// -------------------------------------------------------------------------
+	// Check if we have captured this board alread.
+
+	var foundMatch bool
+
+	fsys := os.DirFS("cmd/connect/board/board-files")
+
+	fn := func(fileName string, dirEntry fs.DirEntry, err error) error {
+		if foundMatch {
+			return errors.New("found match")
+		}
+
+		if err != nil {
+			return fmt.Errorf("walkdir failure: %w", err)
+		}
+
+		file, err := fsys.Open(fileName)
+		if err != nil {
+			return fmt.Errorf("opening key file: %w", err)
+		}
+		defer file.Close()
+
+		var board strings.Builder
+		var lineCount int
+
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			board.WriteString(scanner.Text())
+			board.WriteString("\n")
+
+			lineCount++
+			if lineCount == 6 {
+				break
+			}
+		}
+
+		if currentBoard.String() == board.String() {
+			foundMatch = true
+		}
+
+		return nil
+	}
+
+	fs.WalkDir(fsys, ".", fn)
+
+	if foundMatch {
+		b.print(boardWidth+4, padTop+4, "** FOUND **")
+		return
+	}
+
+	// -------------------------------------------------------------------------
+	// Save a copy of this board.
+
+	f, _ := os.Create("cmd/connect/board/board-files/" + uuid.NewString() + "txt")
+	defer f.Close()
+
+	f.WriteString(currentBoard.String())
+
+	b.print(boardWidth+3, padTop+4, "** SAVED **")
 }
 
 func (b *Board) newGame() {
