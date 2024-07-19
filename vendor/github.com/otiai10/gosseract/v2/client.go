@@ -1,12 +1,5 @@
 package gosseract
 
-// #if __FreeBSD__ >= 10
-// #cgo LDFLAGS: -L/usr/local/lib -llept -ltesseract
-// #else
-// #cgo CXXFLAGS: -std=c++0x
-// #cgo LDFLAGS: -llept -ltesseract
-// #cgo CPPFLAGS: -Wno-unused-result
-// #endif
 // #include <stdlib.h>
 // #include <stdbool.h>
 // #include "tessbridge.h"
@@ -51,7 +44,7 @@ type Client struct {
 	// TessdataPrefix can indicate directory path to `tessdata`.
 	// It is set `/usr/local/share/tessdata/` or something like that, as default.
 	// TODO: Implement and test
-	TessdataPrefix *string
+	TessdataPrefix string
 
 	// Languages are languages to be detected. If not specified, it's gonna be "eng".
 	Languages []string
@@ -77,6 +70,7 @@ func NewClient() *Client {
 		Variables:  map[SettableVariable]string{},
 		Trim:       true,
 		shouldInit: true,
+		Languages:  []string{"eng"},
 	}
 	return client
 }
@@ -174,7 +168,7 @@ func (client *Client) DisableOutput() error {
 }
 
 // SetWhitelist sets whitelist chars.
-// See official documentation for whitelist here https://github.com/tesseract-ocr/tesseract/wiki/ImproveQuality#dictionaries-word-lists-and-patterns
+// See official documentation for whitelist here https://tesseract-ocr.github.io/tessdoc/ImproveQuality#dictionaries-word-lists-and-patterns
 func (client *Client) SetWhitelist(whitelist string) error {
 	err := client.SetVariable(TESSEDIT_CHAR_WHITELIST, whitelist)
 
@@ -184,7 +178,7 @@ func (client *Client) SetWhitelist(whitelist string) error {
 }
 
 // SetBlacklist sets blacklist chars.
-// See official documentation for blacklist here https://github.com/tesseract-ocr/tesseract/wiki/ImproveQuality#dictionaries-word-lists-and-patterns
+// See official documentation for blacklist here https://tesseract-ocr.github.io/tessdoc/ImproveQuality#dictionaries-word-lists-and-patterns
 func (client *Client) SetBlacklist(blacklist string) error {
 	err := client.SetVariable(TESSEDIT_CHAR_BLACKLIST, blacklist)
 
@@ -206,7 +200,7 @@ func (client *Client) SetVariable(key SettableVariable, value string) error {
 }
 
 // SetPageSegMode sets "Page Segmentation Mode" (PSM) to detect layout of characters.
-// See official documentation for PSM here https://github.com/tesseract-ocr/tesseract/wiki/ImproveQuality#page-segmentation-method
+// See official documentation for PSM here https://tesseract-ocr.github.io/tessdoc/ImproveQuality#page-segmentation-method
 // See https://github.com/otiai10/gosseract/issues/52 for more information.
 func (client *Client) SetPageSegMode(mode PageSegMode) error {
 	C.SetPageSegMode(client.api, C.int(mode))
@@ -229,8 +223,18 @@ func (client *Client) SetConfigFile(fpath string) error {
 	return nil
 }
 
+// SetTessdataPrefix sets path to the models directory.
+// Environment variable TESSDATA_PREFIX is used as default.
+func (client *Client) SetTessdataPrefix(prefix string) error {
+	if prefix == "" {
+		return fmt.Errorf("tessdata prefix could not be empty")
+	}
+	client.TessdataPrefix = prefix
+	client.flagForInit()
+	return nil
+}
+
 // Initialize tesseract::TessBaseAPI
-// TODO: add tessdata prefix
 func (client *Client) init() error {
 
 	if !client.shouldInit {
@@ -250,8 +254,14 @@ func (client *Client) init() error {
 	}
 	defer C.free(unsafe.Pointer(configfile))
 
+	var tessdataPrefix *C.char
+	if client.TessdataPrefix != "" {
+		tessdataPrefix = C.CString(client.TessdataPrefix)
+	}
+	defer C.free(unsafe.Pointer(tessdataPrefix))
+
 	errbuf := [512]C.char{}
-	res := C.Init(client.api, nil, languages, configfile, &errbuf[0])
+	res := C.Init(client.api, tessdataPrefix, languages, configfile, &errbuf[0])
 	msg := C.GoString(&errbuf[0])
 
 	if res != 0 {
@@ -351,7 +361,7 @@ func (client *Client) GetBoundingBoxes(level PageIteratorLevel) (out []BoundingB
 	length := int(boxArray.length)
 	defer C.free(unsafe.Pointer(boxArray.boxes))
 	defer C.free(unsafe.Pointer(boxArray))
-
+	out = make([]BoundingBox, 0, length)
 	for i := 0; i < length; i++ {
 		// cast to bounding_box: boxes + i*sizeof(box)
 		box := (*C.struct_bounding_box)(unsafe.Pointer(uintptr(unsafe.Pointer(boxArray.boxes)) + uintptr(i)*unsafe.Sizeof(C.struct_bounding_box{})))
@@ -367,8 +377,7 @@ func (client *Client) GetBoundingBoxes(level PageIteratorLevel) (out []BoundingB
 
 // GetAvailableLanguages returns a list of available languages in the default tesspath
 func GetAvailableLanguages() ([]string, error) {
-	path := C.GoString(C.GetDataPath())
-	languages, err := filepath.Glob(filepath.Join(path, "*.traineddata"))
+	languages, err := filepath.Glob(filepath.Join(getDataPath(), "*.traineddata"))
 	if err != nil {
 		return languages, err
 	}
@@ -393,7 +402,7 @@ func (client *Client) GetBoundingBoxesVerbose() (out []BoundingBox, err error) {
 	length := int(boxArray.length)
 	defer C.free(unsafe.Pointer(boxArray.boxes))
 	defer C.free(unsafe.Pointer(boxArray))
-
+	out = make([]BoundingBox, 0, length)
 	for i := 0; i < length; i++ {
 		// cast to bounding_box: boxes + i*sizeof(box)
 		box := (*C.struct_bounding_box)(unsafe.Pointer(uintptr(unsafe.Pointer(boxArray.boxes)) + uintptr(i)*unsafe.Sizeof(C.struct_bounding_box{})))
@@ -408,4 +417,10 @@ func (client *Client) GetBoundingBoxesVerbose() (out []BoundingBox, err error) {
 		})
 	}
 	return
+}
+
+// getDataPath is useful hepler to determine where current tesseract
+// installation stores trained models
+func getDataPath() string {
+	return C.GoString(C.GetDataPath())
 }
