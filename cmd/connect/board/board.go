@@ -101,7 +101,13 @@ func (b *Board) Run() chan struct{} {
 }
 
 func (b *Board) saveBoard() {
-	b.print(boardWidth+3, padTop+4, "           ")
+	b.print(boardWidth+3, padTop+4, "               ")
+	defer func() {
+		go func() {
+			time.Sleep(time.Second)
+			b.print(boardWidth+3, padTop+4, "               ")
+		}()
+	}()
 
 	// -------------------------------------------------------------------------
 	// Create a copy of the board.
@@ -172,7 +178,7 @@ func (b *Board) saveBoard() {
 	fs.WalkDir(fsys, ".", fn)
 
 	if foundMatch {
-		b.print(boardWidth+4, padTop+4, "** FOUND **")
+		b.print(boardWidth+3, padTop+4, "** FOUND **")
 		return
 	}
 
@@ -402,6 +408,9 @@ func (b *Board) checkForWinner(col int, row int) {
 		case colorRed:
 			red++
 			blue = 0
+		default:
+			red = 0
+			blue = 0
 		}
 
 		switch {
@@ -432,6 +441,9 @@ func (b *Board) checkForWinner(col int, row int) {
 		case colorRed:
 			red++
 			blue = 0
+		default:
+			red = 0
+			blue = 0
 		}
 
 		switch {
@@ -453,10 +465,7 @@ func (b *Board) checkForWinner(col int, row int) {
 	// Walk up in a diagonal until we hit column 0.
 	useRow := row
 	useCol := col
-	for r := row - 1; r >= 0; r-- {
-		if useCol == 0 || useRow == 0 {
-			break
-		}
+	for useCol != 0 && useRow != 0 {
 		useRow--
 		useCol--
 	}
@@ -474,6 +483,9 @@ func (b *Board) checkForWinner(col int, row int) {
 			red = 0
 		case colorRed:
 			red++
+			blue = 0
+		default:
+			red = 0
 			blue = 0
 		}
 
@@ -496,21 +508,18 @@ func (b *Board) checkForWinner(col int, row int) {
 	red = 0
 	blue = 0
 
-	// Walk up in a diagonal until we hit column cols-1.
+	// Walk up in a diagonal until we hit column 0.
 	useRow = row
 	useCol = col
-	for r := row; r < rows; r++ {
-		if useCol == 0 || useRow == rows-1 {
-			break
-		}
-		useRow++
-		useCol--
+	for useCol != cols-1 && useRow != 0 {
+		useRow--
+		useCol++
 	}
 
-	for useCol != cols && useRow > 0 {
+	for useCol >= 0 && useRow != rows {
 		if !b.cells[useCol][useRow].hasPiece {
-			useCol++
-			useRow--
+			useCol--
+			useRow++
 			continue
 		}
 
@@ -520,6 +529,9 @@ func (b *Board) checkForWinner(col int, row int) {
 			red = 0
 		case colorRed:
 			red++
+			blue = 0
+		default:
+			red = 0
 			blue = 0
 		}
 
@@ -532,8 +544,8 @@ func (b *Board) checkForWinner(col int, row int) {
 			return
 		}
 
-		useCol++
-		useRow--
+		useCol--
+		useRow++
 	}
 
 	// No winner, but is there a tie?
