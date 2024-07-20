@@ -34,8 +34,8 @@ const (
 )
 
 const (
-	colorBlue = "blue"
-	colorRed  = "red"
+	colorBlue = "Blue"
+	colorRed  = "Red"
 )
 
 const (
@@ -100,140 +100,9 @@ func (b *Board) Run() chan struct{} {
 	return b.pollEvents()
 }
 
-func (b *Board) saveBoard() {
-	b.print(boardWidth+3, padTop+4, "               ")
-	defer func() {
-		go func() {
-			time.Sleep(time.Second)
-			b.print(boardWidth+3, padTop+4, "               ")
-		}()
-	}()
-
-	// -------------------------------------------------------------------------
-	// Create a copy of the board.
-
-	var currentBoard strings.Builder
-
-	var blue int
-	var red int
-
-	for row := range rows {
-		currentBoard.WriteString("|")
-		for col := range cols {
-			cell := b.cells[col][row]
-			switch {
-			case !cell.hasPiece:
-				currentBoard.WriteString("🟢|")
-			default:
-				switch cell.color {
-				case colorBlue:
-					currentBoard.WriteString("🔵|")
-					blue++
-				case colorRed:
-					currentBoard.WriteString("🔴|")
-					red++
-				}
-			}
-		}
-		currentBoard.WriteString("\n")
-	}
-
-	// -------------------------------------------------------------------------
-	// Check if we have captured this board alread.
-
-	var foundMatch bool
-
-	fsys := os.DirFS("cmd/connect/board/board-files")
-
-	fn := func(fileName string, dirEntry fs.DirEntry, err error) error {
-		if foundMatch {
-			return errors.New("found match")
-		}
-
-		if err != nil {
-			return fmt.Errorf("walkdir failure: %w", err)
-		}
-
-		file, err := fsys.Open(fileName)
-		if err != nil {
-			return fmt.Errorf("opening key file: %w", err)
-		}
-		defer file.Close()
-
-		var board strings.Builder
-		var lineCount int
-
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			board.WriteString(scanner.Text())
-			board.WriteString("\n")
-
-			lineCount++
-			if lineCount == 6 {
-				break
-			}
-		}
-
-		if strings.Compare(currentBoard.String(), board.String()) == 0 {
-			foundMatch = true
-		}
-
-		return nil
-	}
-
-	fs.WalkDir(fsys, ".", fn)
-
-	if foundMatch {
-		b.print(boardWidth+3, padTop+4, "** FOUND **")
-		return
-	}
-
-	// -------------------------------------------------------------------------
-	// Save a copy of this board and extra information.
-
-	f, _ := os.Create("cmd/connect/board/board-files/" + uuid.NewString() + ".txt")
-	defer f.Close()
-
-	f.WriteString(currentBoard.String())
-	f.WriteString("\n")
-
-	switch {
-	case blue == 1 && (red == 0 || red > 1):
-		fmt.Fprintf(f, "There is %d space occupied by a Blue marker and %d spaces occupied by Red markers on the game board.\n\n", blue, red)
-	case red == 1 && (blue == 0 || blue > 1):
-		fmt.Fprintf(f, "There are %d spaces occupied by Blue markers and %d space occupied by a Red marker on the game board.\n\n", blue, red)
-	case blue == 1 && red == 1:
-		fmt.Fprintf(f, "There is %d space occupied by a Blue marker and %d space occupied by a Red marker on the game board.\n\n", blue, red)
-	default:
-		fmt.Fprintf(f, "There are %d spaces occupied by Blue markers and %d spaces occupied by Red markers on the game board.\n\n", blue, red)
-	}
-
-	switch b.gameOver {
-	case true:
-		if b.lastWinner == "Tie Game" {
-			f.WriteString("The game is over and Red and Blue have tied the game.\n")
-		} else {
-			fmt.Fprintf(f, "The game is over and %s has won the game.\n", b.lastWinner)
-		}
-	default:
-		switch {
-		case blue > red:
-			f.WriteString("The Red player goes next and they should choose one of the following columns from the specified list:\n")
-		case red > blue:
-			f.WriteString("The Blue player goes next and they should choose one of the following columns from the specified list:\n")
-		case red == blue:
-			f.WriteString("If the Blue player goes next they should choose one of the following columns from the specified list:\n\n")
-			f.WriteString("If the Red player goes next they should choose one of the following columns from the specified list:\n")
-		}
-	}
-
-	b.print(boardWidth+3, padTop+4, "** SAVED **")
-}
-
 func (b *Board) newGame() {
 	b.inputCol = 4
 	b.cells = [cols][rows]cell{}
-	b.currentTurn = colorBlue
 	b.gameOver = false
 
 	b.drawInit()
@@ -241,8 +110,11 @@ func (b *Board) newGame() {
 
 func (b *Board) drawInit() {
 	b.screen.Clear()
+	b.print(0, 2, "*1*"+b.currentTurn)
 	b.drawEmptyGameBoard()
 	b.appyBoardState()
+
+	b.print(0, 3, "*5*"+b.currentTurn)
 }
 
 func (b *Board) drawEmptyGameBoard() {
@@ -282,7 +154,12 @@ func (b *Board) drawEmptyGameBoard() {
 	b.print(0, boardHeight+padTop+1, "   ①    ②    ③    ④    ⑤    ⑥    ⑦")
 
 	if !b.gameOver {
-		b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔵")
+		switch b.currentTurn {
+		case colorBlue:
+			b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔵")
+		default:
+			b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
+		}
 	}
 
 	b.print(boardWidth+3, padTop+0, "Last Winner:")
@@ -452,10 +329,10 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner("Red", "🔴")
+			b.showWinner(colorRed, "🔴")
 			return
 		case blue == 4:
-			b.showWinner("Blue", "🔵")
+			b.showWinner(colorBlue, "🔵")
 			return
 		}
 	}
@@ -485,10 +362,10 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner("Red", "🔴")
+			b.showWinner(colorRed, "🔴")
 			return
 		case blue == 4:
-			b.showWinner("Blue", "🔵")
+			b.showWinner(colorBlue, "🔵")
 			return
 		}
 	}
@@ -528,10 +405,10 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner("Red", "🔴")
+			b.showWinner(colorRed, "🔴")
 			return
 		case blue == 4:
-			b.showWinner("Blue", "🔵")
+			b.showWinner(colorBlue, "🔵")
 			return
 		}
 
@@ -574,10 +451,10 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner("Red", "🔴")
+			b.showWinner(colorRed, "🔴")
 			return
 		case blue == 4:
-			b.showWinner("Blue", "🔵")
+			b.showWinner(colorBlue, "🔵")
 			return
 		}
 
@@ -605,6 +482,7 @@ stop:
 // showWinner displays a modal dialog box.
 func (b *Board) showWinner(color string, piece string) {
 	message := fmt.Sprintf("%s (%s)", color, piece)
+
 	if color == "" {
 		message = "Tie Game"
 	}
@@ -672,4 +550,134 @@ func (b *Board) print(x, y int, str string) {
 		x += w
 	}
 	b.screen.Show()
+}
+
+func (b *Board) saveBoard() {
+	b.print(boardWidth+3, padTop+4, "               ")
+	defer func() {
+		go func() {
+			time.Sleep(time.Second)
+			b.print(boardWidth+3, padTop+4, "               ")
+		}()
+	}()
+
+	// -------------------------------------------------------------------------
+	// Create a copy of the board.
+
+	var currentBoard strings.Builder
+
+	var blue int
+	var red int
+
+	for row := range rows {
+		currentBoard.WriteString("|")
+		for col := range cols {
+			cell := b.cells[col][row]
+			switch {
+			case !cell.hasPiece:
+				currentBoard.WriteString("🟢|")
+			default:
+				switch cell.color {
+				case colorBlue:
+					currentBoard.WriteString("🔵|")
+					blue++
+				case colorRed:
+					currentBoard.WriteString("🔴|")
+					red++
+				}
+			}
+		}
+		currentBoard.WriteString("\n")
+	}
+
+	// -------------------------------------------------------------------------
+	// Check if we have captured this board alread.
+
+	var foundMatch bool
+
+	fsys := os.DirFS("cmd/connect/board/board-files")
+
+	fn := func(fileName string, dirEntry fs.DirEntry, err error) error {
+		if foundMatch {
+			return errors.New("found match")
+		}
+
+		if err != nil {
+			return fmt.Errorf("walkdir failure: %w", err)
+		}
+
+		file, err := fsys.Open(fileName)
+		if err != nil {
+			return fmt.Errorf("opening key file: %w", err)
+		}
+		defer file.Close()
+
+		var board strings.Builder
+		var lineCount int
+
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			board.WriteString(scanner.Text())
+			board.WriteString("\n")
+
+			lineCount++
+			if lineCount == 6 {
+				break
+			}
+		}
+
+		if strings.Compare(currentBoard.String(), board.String()) == 0 {
+			foundMatch = true
+		}
+
+		return nil
+	}
+
+	fs.WalkDir(fsys, ".", fn)
+
+	if foundMatch {
+		b.print(boardWidth+3, padTop+4, "** FOUND **")
+		return
+	}
+
+	// -------------------------------------------------------------------------
+	// Save a copy of this board and extra information.
+
+	f, _ := os.Create("cmd/connect/board/board-files/" + uuid.NewString() + ".txt")
+	defer f.Close()
+
+	f.WriteString(currentBoard.String())
+	f.WriteString("\n")
+
+	switch {
+	case blue == 1 && (red == 0 || red > 1):
+		fmt.Fprintf(f, "There is %d space occupied by a Blue marker and %d spaces occupied by Red markers on the game board.\n\n", blue, red)
+	case red == 1 && (blue == 0 || blue > 1):
+		fmt.Fprintf(f, "There are %d spaces occupied by Blue markers and %d space occupied by a Red marker on the game board.\n\n", blue, red)
+	case blue == 1 && red == 1:
+		fmt.Fprintf(f, "There is %d space occupied by a Blue marker and %d space occupied by a Red marker on the game board.\n\n", blue, red)
+	default:
+		fmt.Fprintf(f, "There are %d spaces occupied by Blue markers and %d spaces occupied by Red markers on the game board.\n\n", blue, red)
+	}
+
+	switch b.gameOver {
+	case true:
+		if b.lastWinner == "Tie Game" {
+			f.WriteString("The game is over and Red and Blue have tied the game.\n")
+		} else {
+			fmt.Fprintf(f, "The game is over and %s has won the game.\n", b.lastWinner)
+		}
+	default:
+		switch {
+		case blue > red:
+			f.WriteString("The Red player goes next and they should choose one of the following columns from the specified list:\n")
+		case red > blue:
+			f.WriteString("The Blue player goes next and they should choose one of the following columns from the specified list:\n")
+		case red == blue:
+			f.WriteString("If the Blue player goes next they should choose one of the following columns from the specified list:\n\n")
+			f.WriteString("If the Red player goes next they should choose one of the following columns from the specified list:\n")
+		}
+	}
+
+	b.print(boardWidth+3, padTop+4, "** SAVED **")
 }

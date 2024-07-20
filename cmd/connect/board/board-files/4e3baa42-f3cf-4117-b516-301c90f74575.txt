@@ -1,0 +1,10 @@
+|🟢|🟢|🟢|🟢|🟢|🟢|🟢|
+|🟢|🟢|🟢|🟢|🟢|🟢|🟢|
+|🟢|🟢|🔴|🟢|🟢|🟢|🟢|
+|🟢|🟢|🔴|🔵|🟢|🟢|🟢|
+|🟢|🟢|🔴|🔵|🟢|🟢|🟢|
+|🟢|🟢|🔴|🔵|🔵|🟢|🟢|
+
+There are 4 spaces occupied by Blue markers and 4 spaces occupied by Red markers on the game board.
+
+The game is over and Red (🔴) has won the game.
