@@ -18,17 +18,16 @@ func (b *Board) pollEvents() chan struct{} {
 				continue
 			}
 
-			// Check if the escape key was selected.
 			keyType := ev.Key()
-			if keyType == tcell.KeyEscape {
+
+			// Process the specified keys.
+			switch keyType {
+			case tcell.KeyEscape:
 				if b.modalUp {
 					b.closeModal()
-					continue
 				}
-			}
 
-			// Check if we are asked to quit.
-			if keyType == tcell.KeyRune {
+			case tcell.KeyRune:
 				switch ev.Rune() {
 				case rune('q'):
 					close(quit)
@@ -41,22 +40,16 @@ func (b *Board) pollEvents() chan struct{} {
 					b.dropPiece(true)
 					b.saveBoard()
 				}
-			}
 
-			// Process the specified keys.
-			switch keyType {
-			case tcell.KeyLeft, tcell.KeyRight, tcell.KeyEnter:
-				switch keyType {
-				case tcell.KeyLeft:
-					b.movePlayerPiece(dirLeft)
+			case tcell.KeyLeft:
+				b.movePlayerPiece(dirLeft)
 
-				case tcell.KeyRight:
-					b.movePlayerPiece(dirRight)
+			case tcell.KeyRight:
+				b.movePlayerPiece(dirRight)
 
-				case tcell.KeyEnter, tcell.KeyDown:
-					b.dropPiece(true)
-					b.saveBoard()
-				}
+			case tcell.KeyEnter, tcell.KeyDown:
+				b.dropPiece(true)
+				b.saveBoard()
 			}
 		}
 	}()
