@@ -569,11 +569,11 @@ func (b *Board) print(x, y int, str string) {
 }
 
 func (b *Board) saveBoard() {
-	b.print(boardWidth+3, padTop+4, "               ")
+	b.print(boardWidth+3, padTop+5, "               ")
 	defer func() {
 		go func() {
 			time.Sleep(time.Second)
-			b.print(boardWidth+3, padTop+4, "               ")
+			b.print(boardWidth+3, padTop+5, "               ")
 		}()
 	}()
 
