@@ -324,6 +324,8 @@ func (b *Board) checkForWinner(col int, row int) bool {
 
 	for col := 0; col < cols; col++ {
 		if !b.cells[col][row].hasPiece {
+			red = 0
+			blue = 0
 			continue
 		}
 
@@ -333,9 +335,6 @@ func (b *Board) checkForWinner(col int, row int) bool {
 			red = 0
 		case colorRed:
 			red++
-			blue = 0
-		default:
-			red = 0
 			blue = 0
 		}
 
@@ -357,6 +356,8 @@ func (b *Board) checkForWinner(col int, row int) bool {
 
 	for row := 0; row < rows; row++ {
 		if !b.cells[col][row].hasPiece {
+			red = 0
+			blue = 0
 			continue
 		}
 
@@ -366,9 +367,6 @@ func (b *Board) checkForWinner(col int, row int) bool {
 			red = 0
 		case colorRed:
 			red++
-			blue = 0
-		default:
-			red = 0
 			blue = 0
 		}
 
@@ -400,6 +398,8 @@ func (b *Board) checkForWinner(col int, row int) bool {
 		if !b.cells[useCol][useRow].hasPiece {
 			useCol++
 			useRow++
+			red = 0
+			blue = 0
 			continue
 		}
 
@@ -409,9 +409,6 @@ func (b *Board) checkForWinner(col int, row int) bool {
 			red = 0
 		case colorRed:
 			red++
-			blue = 0
-		default:
-			red = 0
 			blue = 0
 		}
 
@@ -446,6 +443,8 @@ func (b *Board) checkForWinner(col int, row int) bool {
 		if !b.cells[useCol][useRow].hasPiece {
 			useCol--
 			useRow++
+			red = 0
+			blue = 0
 			continue
 		}
 
@@ -455,9 +454,6 @@ func (b *Board) checkForWinner(col int, row int) bool {
 			red = 0
 		case colorRed:
 			red++
-			blue = 0
-		default:
-			red = 0
 			blue = 0
 		}
 
