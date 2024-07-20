@@ -652,7 +652,7 @@ func (b *Board) saveBoard() {
 	fs.WalkDir(fsys, ".", fn)
 
 	if foundMatch {
-		b.print(boardWidth+3, padTop+4, "** FOUND **")
+		b.print(boardWidth+3, padTop+5, "** FOUND **")
 		return
 	}
 
@@ -695,5 +695,5 @@ func (b *Board) saveBoard() {
 		}
 	}
 
-	b.print(boardWidth+3, padTop+4, "** SAVED **")
+	b.print(boardWidth+3, padTop+5, "** SAVED **")
 }
