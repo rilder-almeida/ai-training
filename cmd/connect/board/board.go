@@ -50,15 +50,15 @@ type cell struct {
 
 // Board represents the game board and all its state.
 type Board struct {
-	screen      tcell.Screen
-	style       tcell.Style
-	cells       [cols][rows]cell
-	inputCol    int
-	currentTurn string
-	gameOver    bool
-	lastWinner  string
-	modalUp     bool
-	modalMsg    string
+	screen        tcell.Screen
+	style         tcell.Style
+	cells         [cols][rows]cell
+	inputCol      int
+	currentTurn   string
+	lastWinner    string
+	lastWinnerMsg string
+	gameOver      bool
+	modalUp       bool
 }
 
 // New contructs a game board and renders the board.
@@ -105,16 +105,17 @@ func (b *Board) newGame() {
 	b.cells = [cols][rows]cell{}
 	b.gameOver = false
 
+	if b.lastWinner != "" {
+		b.currentTurn = b.lastWinner
+	}
+
 	b.drawInit()
 }
 
 func (b *Board) drawInit() {
 	b.screen.Clear()
-	b.print(0, 2, "*1*"+b.currentTurn)
 	b.drawEmptyGameBoard()
 	b.appyBoardState()
-
-	b.print(0, 3, "*5*"+b.currentTurn)
 }
 
 func (b *Board) drawEmptyGameBoard() {
@@ -153,16 +154,7 @@ func (b *Board) drawEmptyGameBoard() {
 	b.print(10, 1, "Connect 4 AI Version")
 	b.print(0, boardHeight+padTop+1, "   ①    ②    ③    ④    ⑤    ⑥    ⑦")
 
-	if !b.gameOver {
-		switch b.currentTurn {
-		case colorBlue:
-			b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔵")
-		default:
-			b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
-		}
-	}
-
-	b.print(boardWidth+3, padTop+0, "Last Winner:")
+	b.print(boardWidth+3, padTop+0, "Last Winner:               ")
 	b.print(boardWidth+3, padTop+2, "<n> : new game")
 }
 
@@ -186,7 +178,24 @@ func (b *Board) appyBoardState() {
 		}
 	}
 
-	b.print(boardWidth+3, padTop+0, "Last Winner: "+b.lastWinner)
+	b.print(boardWidth+3, padTop+0, "Last Winner: "+b.lastWinnerMsg)
+
+	if !b.gameOver {
+		var whichColor string
+		switch b.gameOver {
+		case true:
+			whichColor = b.lastWinner
+		default:
+			whichColor = b.currentTurn
+		}
+
+		switch whichColor {
+		case colorBlue:
+			b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔵")
+		default:
+			b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
+		}
+	}
 
 	b.screen.Show()
 }
@@ -287,7 +296,9 @@ func (b *Board) dropPiece(animate bool) {
 	if animate {
 		// Check for winner based on the marker being placed
 		// in this location.
-		b.checkForWinner(b.inputCol-1, row-1)
+		if isWinner := b.checkForWinner(b.inputCol-1, row-1); isWinner {
+			return
+		}
 
 		// Set the next input marker.
 		b.inputCol = 4
@@ -302,7 +313,7 @@ func (b *Board) dropPiece(animate bool) {
 	}
 }
 
-func (b *Board) checkForWinner(col int, row int) {
+func (b *Board) checkForWinner(col int, row int) bool {
 
 	// -------------------------------------------------------------------------
 	// Is there a winner in the specified row.
@@ -329,11 +340,11 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner(colorRed, "🔴")
-			return
+			b.showWinner(colorRed)
+			return true
 		case blue == 4:
-			b.showWinner(colorBlue, "🔵")
-			return
+			b.showWinner(colorBlue)
+			return true
 		}
 	}
 
@@ -362,11 +373,11 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner(colorRed, "🔴")
-			return
+			b.showWinner(colorRed)
+			return true
 		case blue == 4:
-			b.showWinner(colorBlue, "🔵")
-			return
+			b.showWinner(colorBlue)
+			return true
 		}
 	}
 
@@ -405,11 +416,11 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner(colorRed, "🔴")
-			return
+			b.showWinner(colorRed)
+			return true
 		case blue == 4:
-			b.showWinner(colorBlue, "🔵")
-			return
+			b.showWinner(colorBlue)
+			return true
 		}
 
 		useCol++
@@ -451,11 +462,11 @@ func (b *Board) checkForWinner(col int, row int) {
 
 		switch {
 		case red == 4:
-			b.showWinner(colorRed, "🔴")
-			return
+			b.showWinner(colorRed)
+			return true
 		case blue == 4:
-			b.showWinner(colorBlue, "🔵")
-			return
+			b.showWinner(colorBlue)
+			return true
 		}
 
 		useCol--
@@ -475,36 +486,40 @@ stop:
 	}
 
 	if tie {
-		b.showWinner("", "")
+		b.showWinner("Tie Game")
 	}
+
+	return false
 }
 
 // showWinner displays a modal dialog box.
-func (b *Board) showWinner(color string, piece string) {
-	message := fmt.Sprintf("%s (%s)", color, piece)
-
-	if color == "" {
-		message = "Tie Game"
+func (b *Board) showWinner(color string) {
+	switch color {
+	case colorBlue:
+		b.lastWinner = color
+		b.lastWinnerMsg = "Blue (🔵)"
+	case colorRed:
+		b.lastWinner = color
+		b.lastWinnerMsg = "Red (🔴)"
+	default:
+		b.lastWinnerMsg = "Tie Game"
 	}
 
 	b.gameOver = true
-	b.lastWinner = message
 	b.modalUp = true
-	b.modalMsg = message
 
 	b.screen.HideCursor()
 	b.drawBox(5, 8, 33, 13)
 
 	h := 10
-	l := len(message)
+	l := len(b.lastWinnerMsg)
 	x := 19 - (l / 2)
-	b.print(x, h, message)
+	b.print(x, h, b.lastWinnerMsg)
 }
 
 // closeModal closes the modal dialog box.
 func (b *Board) closeModal() {
 	b.modalUp = false
-	b.modalMsg = ""
 
 	b.drawInit()
 }
