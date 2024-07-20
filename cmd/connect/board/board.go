@@ -156,6 +156,7 @@ func (b *Board) drawEmptyGameBoard() {
 
 	b.print(boardWidth+3, padTop+0, "Last Winner:               ")
 	b.print(boardWidth+3, padTop+2, "<n> : new game")
+	b.print(boardWidth+3, padTop+3, "<q> : quit game")
 }
 
 func (b *Board) appyBoardState() {

@@ -1,0 +1,10 @@
+|🟢|🔵|🔴|🔵|🔴|🔵|🔴|
+|🟢|🔴|🔵|🔵|🔴|🔵|🔴|
+|🟢|🔵|🔴|🔴|🔵|🔴|🔵|
+|🔴|🔵|🔵|🔴|🔴|🔵|🔴|
+|🔵|🔴|🔴|🔵|🔵|🔴|🔴|
+|🔴|🔵|🔵|🔴|🔴|🔵|🔵|
+
+There are 19 spaces occupied by Blue markers and 20 spaces occupied by Red markers on the game board.
+
+The Blue player goes next and they should choose one of the following columns from the specified list:
