@@ -53,7 +53,7 @@ func (b *Board) pollEvents() chan struct{} {
 				case tcell.KeyRight:
 					b.movePlayerPiece(dirRight)
 
-				case tcell.KeyEnter:
+				case tcell.KeyEnter, tcell.KeyDown:
 					b.dropPiece(true)
 					b.saveBoard()
 				}
