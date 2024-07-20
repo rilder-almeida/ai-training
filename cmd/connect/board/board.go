@@ -3,9 +3,11 @@ package board
 
 import (
 	"bufio"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io/fs"
+	"math/big"
 	"os"
 	"strings"
 	"time"
@@ -77,11 +79,21 @@ func New() (*Board, error) {
 	style := tcell.StyleDefault
 	style = style.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 
+	currentTurn := colorBlue
+	nBig, err := rand.Int(rand.Reader, big.NewInt(100))
+	if err != nil {
+		return nil, fmt.Errorf("random number: %w", err)
+	}
+
+	if n := nBig.Int64(); n%2 == 0 {
+		currentTurn = colorRed
+	}
+
 	board := Board{
 		screen:      screen,
 		style:       style,
 		inputCol:    4,
-		currentTurn: colorBlue,
+		currentTurn: currentTurn,
 	}
 
 	board.drawInit()
@@ -565,11 +577,11 @@ func (b *Board) print(x, y int, str string) {
 }
 
 func (b *Board) saveBoard() {
-	b.print(boardWidth+3, padTop+5, "               ")
+	b.print(boardWidth+3, padTop+5, "                  ")
 	defer func() {
 		go func() {
 			time.Sleep(time.Second)
-			b.print(boardWidth+3, padTop+5, "               ")
+			b.print(boardWidth+3, padTop+5, "                  ")
 		}()
 	}()
 
@@ -648,7 +660,7 @@ func (b *Board) saveBoard() {
 	fs.WalkDir(fsys, ".", fn)
 
 	if foundMatch {
-		b.print(boardWidth+3, padTop+5, "** FOUND **")
+		b.print(boardWidth+3, padTop+5, "** BOARD FOUND **")
 		return
 	}
 
@@ -691,5 +703,5 @@ func (b *Board) saveBoard() {
 		}
 	}
 
-	b.print(boardWidth+3, padTop+5, "** SAVED **")
+	b.print(boardWidth+3, padTop+5, "** BOARD SAVED **")
 }
