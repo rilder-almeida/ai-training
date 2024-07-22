@@ -2,18 +2,14 @@
 package board
 
 import (
-	"bufio"
 	"crypto/rand"
-	"errors"
 	"fmt"
-	"io/fs"
 	"math/big"
-	"os"
 	"strings"
 	"time"
 
+	"github.com/ardanlabs/ai-training/cmd/connect/ai"
 	"github.com/gdamore/tcell/v2"
-	"github.com/google/uuid"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -52,6 +48,7 @@ type cell struct {
 
 // Board represents the game board and all its state.
 type Board struct {
+	ai            *ai.AI
 	screen        tcell.Screen
 	style         tcell.Style
 	cells         [cols][rows]cell
@@ -64,7 +61,7 @@ type Board struct {
 }
 
 // New contructs a game board and renders the board.
-func New() (*Board, error) {
+func New(ai *ai.AI) (*Board, error) {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 
 	screen, err := tcell.NewScreen()
@@ -90,6 +87,7 @@ func New() (*Board, error) {
 	}
 
 	board := Board{
+		ai:          ai,
 		screen:      screen,
 		style:       style,
 		inputCol:    4,
@@ -588,120 +586,36 @@ func (b *Board) saveBoard() {
 	// -------------------------------------------------------------------------
 	// Create a copy of the board.
 
-	var currentBoard strings.Builder
+	var boardData strings.Builder
 
 	var blue int
 	var red int
 
 	for row := range rows {
-		currentBoard.WriteString("|")
+		boardData.WriteString("|")
 		for col := range cols {
 			cell := b.cells[col][row]
 			switch {
 			case !cell.hasPiece:
-				currentBoard.WriteString("🟢|")
+				boardData.WriteString("🟢|")
 			default:
 				switch cell.color {
 				case colorBlue:
-					currentBoard.WriteString("🔵|")
+					boardData.WriteString("🔵|")
 					blue++
 				case colorRed:
-					currentBoard.WriteString("🔴|")
+					boardData.WriteString("🔴|")
 					red++
 				}
 			}
 		}
-		currentBoard.WriteString("\n")
+		boardData.WriteString("\n")
 	}
 
 	// -------------------------------------------------------------------------
-	// Check if we have captured this board alread.
+	// Save the board data.
 
-	var foundMatch bool
+	display := b.ai.SaveBoardData(boardData.String(), blue, red, b.gameOver, b.lastWinner)
 
-	fsys := os.DirFS("cmd/connect/board/board-files")
-
-	fn := func(fileName string, dirEntry fs.DirEntry, err error) error {
-		if foundMatch {
-			return errors.New("found match")
-		}
-
-		if err != nil {
-			return fmt.Errorf("walkdir failure: %w", err)
-		}
-
-		file, err := fsys.Open(fileName)
-		if err != nil {
-			return fmt.Errorf("opening key file: %w", err)
-		}
-		defer file.Close()
-
-		var board strings.Builder
-		var lineCount int
-
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			board.WriteString(scanner.Text())
-			board.WriteString("\n")
-
-			lineCount++
-			if lineCount == 6 {
-				break
-			}
-		}
-
-		if strings.Compare(currentBoard.String(), board.String()) == 0 {
-			foundMatch = true
-		}
-
-		return nil
-	}
-
-	fs.WalkDir(fsys, ".", fn)
-
-	if foundMatch {
-		b.print(boardWidth+3, padTop+5, "** BOARD FOUND **")
-		return
-	}
-
-	// -------------------------------------------------------------------------
-	// Save a copy of this board and extra information.
-
-	f, _ := os.Create("cmd/connect/board/board-files/" + uuid.NewString() + ".txt")
-	defer f.Close()
-
-	f.WriteString(currentBoard.String())
-	f.WriteString("\n")
-
-	switch {
-	case blue == 1 && (red == 0 || red > 1):
-		fmt.Fprintf(f, "There is %d space occupied by a Blue marker and %d spaces occupied by Red markers on the game board.\n\n", blue, red)
-	case red == 1 && (blue == 0 || blue > 1):
-		fmt.Fprintf(f, "There are %d spaces occupied by Blue markers and %d space occupied by a Red marker on the game board.\n\n", blue, red)
-	case blue == 1 && red == 1:
-		fmt.Fprintf(f, "There is %d space occupied by a Blue marker and %d space occupied by a Red marker on the game board.\n\n", blue, red)
-	default:
-		fmt.Fprintf(f, "There are %d spaces occupied by Blue markers and %d spaces occupied by Red markers on the game board.\n\n", blue, red)
-	}
-
-	switch b.gameOver {
-	case true:
-		if b.lastWinner == "Tie Game" {
-			f.WriteString("The game is over and Red and Blue have tied the game.\n")
-		} else {
-			fmt.Fprintf(f, "The game is over and %s has won the game.\n", b.lastWinner)
-		}
-	default:
-		switch {
-		case blue > red:
-			f.WriteString("The Red player goes next and they should choose one of the following columns from the specified list:\n")
-		case red > blue:
-			f.WriteString("The Blue player goes next and they should choose one of the following columns from the specified list:\n")
-		case red == blue:
-			f.WriteString("If the Blue player goes next they should choose one of the following columns from the specified list:\n\n")
-			f.WriteString("If the Red player goes next they should choose one of the following columns from the specified list:\n")
-		}
-	}
-
-	b.print(boardWidth+3, padTop+5, "** BOARD SAVED **")
+	b.print(boardWidth+3, padTop+5, display)
 }
