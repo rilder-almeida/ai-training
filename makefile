@@ -8,6 +8,9 @@ SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 connect:
 	go run cmd/connect/main.go
 
+connect-train:
+	go run cmd/connect/main.go --train true
+
 # ==============================================================================
 # Examples
 
