@@ -219,7 +219,7 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 	// -------------------------------------------------------------------------
 	// Save a copy of this board and extra information.
 
-	f, _ := os.Create("cmd/connect/board/board-files/" + uuid.NewString() + ".txt")
+	f, _ := os.Create(ai.filePath + uuid.NewString() + ".txt")
 	defer f.Close()
 
 	f.WriteString(boardData)
@@ -255,7 +255,7 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 		}
 	}
 
-	return "BOARD SAVED"
+	return "NEW BOARD"
 }
 
 // ProcessBoardFiles reads the board-files directory and saved the AI data needed
