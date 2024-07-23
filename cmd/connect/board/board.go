@@ -61,7 +61,6 @@ type Board struct {
 	lastAIMsg     string
 	gameOver      bool
 	modalUp       bool
-	runningAI     bool
 }
 
 // New contructs a game board and renders the board.
@@ -119,7 +118,6 @@ func (b *Board) newGame() {
 	b.cells = [cols][rows]cell{}
 	b.gameOver = false
 	b.lastAIMsg = ""
-	b.runningAI = false
 
 	if b.lastWinner != "" {
 		b.currentTurn = b.lastWinner
@@ -626,14 +624,8 @@ func (b *Board) printAI() {
 }
 
 func (b *Board) runAISupport() {
-	b.runningAI = true
-
 	b.lastAIMsg = ""
 	b.printAI()
-
-	defer func() {
-		b.runningAI = false
-	}()
 
 	// -------------------------------------------------------------------------
 	// Create a copy of the board.

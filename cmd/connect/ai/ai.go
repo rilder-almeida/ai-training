@@ -198,6 +198,8 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 			board.WriteString("\n")
 
 			lineCount++
+
+			// Capture just the game board.
 			if lineCount == 6 {
 				break
 			}
