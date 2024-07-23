@@ -28,6 +28,15 @@ type Board struct {
 	Embedding []float32 `bson:"embedding"`
 }
 
+// SimilarBoard represents connect 4 board found in the similarity search.
+type SimilarBoard struct {
+	ID        string    `bson:"board_id"`
+	Board     string    `bson:"board"`
+	Text      string    `bson:"text"`
+	Embedding []float32 `bson:"embedding"`
+	Score     float64   `bson:"score"`
+}
+
 // AI provides support to process connect 4 boards.
 type AI struct {
 	filePath string
@@ -66,7 +75,7 @@ func New(client *mongo.Client, llm *ollama.LLM) (*AI, error) {
 
 	const indexName = "vector_index"
 	settings := mongodb.VectorIndexSettings{
-		NumDimensions: 4,
+		NumDimensions: 1024,
 		Path:          "embedding",
 		Similarity:    "cosine",
 	}
@@ -86,6 +95,73 @@ func New(client *mongo.Client, llm *ollama.LLM) (*AI, error) {
 	}
 
 	return &ai, nil
+}
+
+// CalculateEmbedding takes a given board data and produces the vector embedding.
+func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	embData := strings.ReplaceAll(boardData, "🔵", "blue")
+	embData = strings.ReplaceAll(embData, "🔴", "red")
+	embData = strings.ReplaceAll(embData, "🟢", "green")
+
+	embedding, err := ai.llm.CreateEmbedding(ctx, []string{embData})
+	if err != nil {
+		return nil, fmt.Errorf("create embedding: %w", err)
+	}
+
+	return embedding[0], nil
+}
+
+// FindSimilarBoard performs a vector search to find the most similar board.
+func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
+	embedding, err := ai.CalculateEmbedding(boardData)
+	if err != nil {
+		return SimilarBoard{}, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// We want to find the nearest neighbors from the question vector embedding.
+	pipeline := mongo.Pipeline{
+		{{
+			Key: "$vectorSearch",
+			Value: bson.M{
+				"index":       "vector_index",
+				"exact":       true,
+				"path":        "embedding",
+				"queryVector": embedding,
+				"limit":       1,
+			}},
+		},
+		{{
+			Key: "$project",
+			Value: bson.M{
+				"board_id":  1,
+				"board":     1,
+				"text":      1,
+				"embedding": 1,
+				"score": bson.M{
+					"$meta": "vectorSearchScore",
+				},
+			}},
+		},
+	}
+
+	cur, err := ai.col.Aggregate(ctx, pipeline)
+	if err != nil {
+		return SimilarBoard{}, fmt.Errorf("aggregate: %w", err)
+	}
+	defer cur.Close(ctx)
+
+	var results []SimilarBoard
+	if err := cur.All(ctx, &results); err != nil {
+		return SimilarBoard{}, fmt.Errorf("all: %w", err)
+	}
+
+	return results[0], nil
 }
 
 // SaveBoardData knows how to write a board file with the following information.
@@ -137,7 +213,7 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 	fs.WalkDir(fsys, ".", fn)
 
 	if foundMatch {
-		return "** BOARD FOUND **"
+		return "BOARD FOUND"
 	}
 
 	// -------------------------------------------------------------------------
@@ -179,7 +255,7 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 		}
 	}
 
-	return "** BOARD SAVED **"
+	return "BOARD SAVED"
 }
 
 // ProcessBoardFiles reads the board-files directory and saved the AI data needed
@@ -215,7 +291,7 @@ func (ai *AI) ProcessBoardFiles() error {
 
 		fmt.Printf("Creating board data: %s\n", boardID)
 
-		board, err := ai.newBoard(ctx, boardID)
+		board, err := ai.newBoard(boardID)
 		if err != nil {
 			return fmt.Errorf("new board: %s: %w", boardID, err)
 		}
@@ -245,7 +321,7 @@ func (ai *AI) findBoard(ctx context.Context, boardID string) (Board, error) {
 	return b, nil
 }
 
-func (ai *AI) newBoard(ctx context.Context, boardID string) (Board, error) {
+func (ai *AI) newBoard(boardID string) (Board, error) {
 	fileName := fmt.Sprintf("%s%s.txt", ai.filePath, boardID)
 
 	f, err := os.Open(fileName)
@@ -281,7 +357,7 @@ func (ai *AI) newBoard(ctx context.Context, boardID string) (Board, error) {
 
 	boardData := board.String()
 
-	embedding, err := ai.calculateEmbedding(ctx, boardData)
+	embedding, err := ai.CalculateEmbedding(boardData)
 	if err != nil {
 		return Board{}, fmt.Errorf("calculate embedding: %s: %w", boardID, err)
 	}
@@ -294,15 +370,6 @@ func (ai *AI) newBoard(ctx context.Context, boardID string) (Board, error) {
 	}
 
 	return b, nil
-}
-
-func (ai *AI) calculateEmbedding(ctx context.Context, boardData string) ([]float32, error) {
-	embedding, err := ai.llm.CreateEmbedding(ctx, []string{boardData})
-	if err != nil {
-		return nil, fmt.Errorf("create embedding: %w", err)
-	}
-
-	return embedding[0], nil
 }
 
 func (ai *AI) saveBoard(ctx context.Context, board Board) error {

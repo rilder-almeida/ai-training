@@ -38,7 +38,7 @@ func (b *Board) pollEvents() chan struct{} {
 
 				case rune(' '):
 					b.dropPiece(true)
-					b.saveBoard()
+					b.runAISupport()
 				}
 
 			case tcell.KeyLeft:
@@ -49,7 +49,7 @@ func (b *Board) pollEvents() chan struct{} {
 
 			case tcell.KeyEnter, tcell.KeyDown:
 				b.dropPiece(true)
-				b.saveBoard()
+				b.runAISupport()
 			}
 		}
 	}()

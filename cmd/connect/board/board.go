@@ -2,6 +2,8 @@
 package board
 
 import (
+	"bufio"
+	"bytes"
 	"crypto/rand"
 	"fmt"
 	"math/big"
@@ -56,8 +58,10 @@ type Board struct {
 	currentTurn   string
 	lastWinner    string
 	lastWinnerMsg string
+	lastAIMsg     string
 	gameOver      bool
 	modalUp       bool
+	runningAI     bool
 }
 
 // New contructs a game board and renders the board.
@@ -114,6 +118,8 @@ func (b *Board) newGame() {
 	b.inputCol = 4
 	b.cells = [cols][rows]cell{}
 	b.gameOver = false
+	b.lastAIMsg = ""
+	b.runningAI = false
 
 	if b.lastWinner != "" {
 		b.currentTurn = b.lastWinner
@@ -123,12 +129,13 @@ func (b *Board) newGame() {
 }
 
 func (b *Board) drawInit() {
-	b.screen.Clear()
 	b.drawEmptyGameBoard()
 	b.appyBoardState()
 }
 
 func (b *Board) drawEmptyGameBoard() {
+	b.screen.Clear()
+
 	width := boardWidth
 	height := boardHeight
 
@@ -164,9 +171,13 @@ func (b *Board) drawEmptyGameBoard() {
 	b.print(10, 1, "Connect 4 AI Version")
 	b.print(0, boardHeight+padTop+1, "   ①    ②    ③    ④    ⑤    ⑥    ⑦")
 
-	b.print(boardWidth+3, padTop+0, "Last Winner:               ")
-	b.print(boardWidth+3, padTop+2, "<n> : new game")
-	b.print(boardWidth+3, padTop+3, "<q> : quit game")
+	b.print(boardWidth+3, padTop-1, "<n> new game      <q> quit game")
+	b.print(boardWidth+3, padTop+1, "Last Winner:                   ")
+
+	screenWidth, _ := b.screen.Size()
+
+	b.drawBox(boardWidth+3, padTop+3, boardWidth+(screenWidth-boardWidth-2), padTop+3+10)
+	b.print(boardWidth+4, padTop+3, " AI PLAYER ")
 }
 
 func (b *Board) appyBoardState() {
@@ -189,7 +200,8 @@ func (b *Board) appyBoardState() {
 		}
 	}
 
-	b.print(boardWidth+3, padTop+0, "Last Winner: "+b.lastWinnerMsg)
+	b.print(boardWidth+3, padTop+1, "Last Winner: "+b.lastWinnerMsg)
+	b.printAI()
 
 	if !b.gameOver {
 		var whichColor string
@@ -534,7 +546,7 @@ func (b *Board) closeModal() {
 // drawBox draws an empty box on the screen.
 func (b *Board) drawBox(x int, y int, width int, height int) {
 	style := b.style
-	style = style.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
+	style = style.Background(tcell.ColorBlack).Foreground(tcell.ColorGray)
 
 	for h := y; h < height; h++ {
 		for w := x; w < width; w++ {
@@ -574,13 +586,53 @@ func (b *Board) print(x, y int, str string) {
 	b.screen.Show()
 }
 
-func (b *Board) saveBoard() {
-	b.print(boardWidth+3, padTop+5, "                  ")
+func (b *Board) printAI() {
+	screenWidth, _ := b.screen.Size()
+	actWidth := (screenWidth - boardWidth - 9)
+
+	row := boardWidth + 5
+	col := padTop + 4
+
+	for range 8 {
+		for range actWidth {
+			b.print(row, col, " ")
+			row++
+		}
+		row = boardWidth + 5
+		col++
+	}
+
+	row = boardWidth + 5
+	col = padTop + 4
+
+	scanner := bufio.NewScanner(bytes.NewReader([]byte(b.lastAIMsg)))
+	scanner.Split(bufio.ScanWords)
+	for scanner.Scan() {
+		word := scanner.Text()
+		if word == "CRLF" {
+			col++
+			row = boardWidth + 5
+			continue
+		}
+
+		b.print(row, col, word)
+
+		row += len(word) + 1
+		if row >= boardWidth+actWidth-4 {
+			col++
+			row = boardWidth + 5
+		}
+	}
+}
+
+func (b *Board) runAISupport() {
+	b.runningAI = true
+
+	b.lastAIMsg = ""
+	b.printAI()
+
 	defer func() {
-		go func() {
-			time.Sleep(time.Second)
-			b.print(boardWidth+3, padTop+5, "                  ")
-		}()
+		b.runningAI = false
 	}()
 
 	// -------------------------------------------------------------------------
@@ -615,7 +667,23 @@ func (b *Board) saveBoard() {
 	// -------------------------------------------------------------------------
 	// Save the board data.
 
-	display := b.ai.SaveBoardData(boardData.String(), blue, red, b.gameOver, b.lastWinner)
+	data := boardData.String()
 
-	b.print(boardWidth+3, padTop+5, display)
+	display := b.ai.SaveBoardData(data, blue, red, b.gameOver, b.lastWinner)
+
+	b.lastAIMsg = fmt.Sprintf("- %s CRLF - RUNNING AI", display)
+	b.printAI()
+
+	// -------------------------------------------------------------------------
+	// Show AI information
+
+	board, err := b.ai.FindSimilarBoard(data)
+	if err != nil {
+		b.lastAIMsg = err.Error()
+		b.printAI()
+		return
+	}
+
+	b.lastAIMsg = fmt.Sprintf("SCORE: %.2f%% CRLF %s", board.Score*100, board.Text)
+	b.printAI()
 }
