@@ -20,25 +20,40 @@ func (b *Board) pollEvents() chan struct{} {
 
 			keyType := ev.Key()
 
-			// Process the specified keys.
-			switch keyType {
-			case tcell.KeyEscape:
+			// Allow the user to quit the game at any time.
+			if keyType == tcell.KeyRune {
+				if ev.Rune() == rune('q') {
+					close(quit)
+					return
+				}
+			}
+
+			// Allow the user to clear the modal.
+			if keyType == tcell.KeyEscape {
 				if b.modalUp {
 					b.closeModal()
 				}
+			}
 
+			// Only the blue player can control the piece.
+			if b.currentTurn == colorRed {
+				b.screen.Beep()
+				continue
+			}
+
+			switch keyType {
 			case tcell.KeyRune:
 				switch ev.Rune() {
-				case rune('q'):
-					close(quit)
-					return
-
 				case rune('n'):
 					b.newGame()
+					if b.currentTurn == colorRed {
+						b.runAISupport()
+					}
 
 				case rune(' '):
-					b.dropPiece(true)
-					b.runAISupport()
+					if isWinner := b.dropPiece(true); !isWinner {
+						b.runAISupport()
+					}
 				}
 
 			case tcell.KeyLeft:
@@ -48,11 +63,16 @@ func (b *Board) pollEvents() chan struct{} {
 				b.movePlayerPiece(dirRight)
 
 			case tcell.KeyEnter, tcell.KeyDown:
-				b.dropPiece(true)
-				b.runAISupport()
+				if isWinner := b.dropPiece(true); !isWinner {
+					b.runAISupport()
+				}
 			}
 		}
 	}()
+
+	if b.currentTurn == colorRed {
+		go b.runAISupport()
+	}
 
 	return quit
 }

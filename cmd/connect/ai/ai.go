@@ -215,7 +215,7 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 	fs.WalkDir(fsys, ".", fn)
 
 	if foundMatch {
-		return "BOARD FOUND"
+		return ""
 	}
 
 	// -------------------------------------------------------------------------
@@ -257,7 +257,7 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 		}
 	}
 
-	return "NEW BOARD"
+	return "NEW TRAINING DATA GENERATED"
 }
 
 // ProcessBoardFiles reads the board-files directory and saved the AI data needed

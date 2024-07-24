@@ -263,7 +263,8 @@ func (b *Board) movePlayerPiece(direction string) {
 	}
 }
 
-func (b *Board) dropPiece(animate bool) {
+func (b *Board) dropPiece(animate bool) bool {
+
 	// Identify where the input marker is located.
 	column := padLeft + 2
 	if b.inputCol > 1 {
@@ -283,7 +284,7 @@ func (b *Board) dropPiece(animate bool) {
 
 	// Is the column full.
 	if row == -1 {
-		return
+		return false
 	}
 
 	// Set this piece in the cells.
@@ -318,7 +319,7 @@ func (b *Board) dropPiece(animate bool) {
 		// Check for winner based on the marker being placed
 		// in this location.
 		if isWinner := b.checkForWinner(b.inputCol-1, row-1); isWinner {
-			return
+			return true
 		}
 
 		// Set the next input marker.
@@ -332,6 +333,8 @@ func (b *Board) dropPiece(animate bool) {
 			b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔵")
 		}
 	}
+
+	return false
 }
 
 func (b *Board) checkForWinner(col int, row int) bool {
@@ -627,6 +630,11 @@ func (b *Board) runAISupport() {
 	b.lastAIMsg = ""
 	b.printAI()
 
+	// At this point the curren turn has changed.
+	if b.currentTurn == colorBlue {
+		return
+	}
+
 	// -------------------------------------------------------------------------
 	// Create a copy of the board.
 
@@ -663,7 +671,12 @@ func (b *Board) runAISupport() {
 
 	display := b.ai.SaveBoardData(data, blue, red, b.gameOver, b.lastWinner)
 
-	b.lastAIMsg = fmt.Sprintf("- %s CRLF - RUNNING AI", display)
+	if display == "" {
+		b.lastAIMsg = "- RUNNING AI"
+	} else {
+		b.lastAIMsg = fmt.Sprintf("- %s CRLF - RUNNING AI", display)
+	}
+
 	b.printAI()
 
 	// -------------------------------------------------------------------------
@@ -678,4 +691,10 @@ func (b *Board) runAISupport() {
 
 	b.lastAIMsg = fmt.Sprintf("SCORE: %.2f%% CRLF %s", board.Score*100, board.Text)
 	b.printAI()
+
+	// -------------------------------------------------------------------------
+	// Show AI information
+
+	b.movePlayerPiece(dirLeft)
+	b.dropPiece(true)
 }
