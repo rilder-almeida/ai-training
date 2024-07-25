@@ -5,6 +5,16 @@
 |🔵|🔴|🔴|🔵|🔵|🔴|🔴|
 |🔴|🔵|🔵|🔴|🔴|🔵|🔵|
 
-There are 21 spaces occupied by Blue markers and 21 spaces occupied by Red markers on the game board.
+-- State
+Winner: Tie
+Turn:
 
-The game is over and Red has won the game.
+-- Blue
+Markers: 21
+Moves:
+Feedback: Tie-Game
+
+-- Red
+Markers: 21
+Moves:
+Feedback: Tie-Game
