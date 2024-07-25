@@ -11,8 +11,8 @@ Turn: Red
 
 -- Blue
 Markers: 2
-Moves: (2)
-Feedback: Normal-GamePlay
+Moves:
+Feedback:
 
 -- Red
 Markers: 1

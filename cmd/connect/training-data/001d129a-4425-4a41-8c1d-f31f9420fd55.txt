@@ -5,6 +5,16 @@
 |🟢|🔵|🔴|🔴|🔴|🔵|🔴|
 |🟢|🔴|🔵|🔴|🔵|🔵|🔴|
 
-There are 12 spaces occupied by Blue markers and 12 spaces occupied by Red markers on the game board.
+-- State
+Winner: Blue
+Turn:
 
-The game is over and Blue has won the game.
+-- Blue
+Markers: 12
+Moves:
+Feedback: Won-Game
+
+-- Red
+Markers: 12
+Moves:
+Feedback: Lost-Game

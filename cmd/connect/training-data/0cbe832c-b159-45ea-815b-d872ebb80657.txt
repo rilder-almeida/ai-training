@@ -12,7 +12,7 @@ Turn: Blue or Red
 -- Blue
 Markers: 9
 Moves: (2)
-Feedback: Won-Game
+Feedback: Will-Win
 
 -- Red
 Markers: 9
