@@ -5,6 +5,15 @@
 |🟢|🔵|🔴|🔴|🔴|🔴|🔵|
 |🟢|🔵|🔴|🔴|🔴|🔵|🔵|
 
-There are 9 spaces occupied by Blue markers and 10 spaces occupied by Red markers on the game board.
+Winner: Red
+Turn:
 
-The game is over and Red has won the game.
+-- Blue
+Markers: 9
+Moves:
+Feedback: Lost-Game
+
+-- Red
+Markers: 10
+Moves:
+Feedback: Won-Game
