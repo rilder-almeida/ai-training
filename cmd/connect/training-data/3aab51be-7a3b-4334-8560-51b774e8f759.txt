@@ -5,21 +5,16 @@
 |🟢|🟢|🔴|🟢|🟢|🟢|🟢|
 |🔵|🟢|🔴|🔵|🟢|🟢|🟢|
 
-Context:
-There are 2 spaces occupied by Blue markers and 2 spaces occupied by Red markers on the game board.
+-- State
+Winner: None
+Turn: Blue or Red
 
-The Red player or Blue player could go next.
+-- Blue
+Markers: 2
+Moves: (4,1,5)
+Feedback: Normal-GamePlay
 
-Blue:
-Moves: (?)
-
-- Say something 1
-- Say something 2
-- Say something 3
-
-Red:
-Moves: (?)
-
-- Say something 1
-- Say something 2
-- Say something 3
+-- Red
+Markers: 2
+Moves: (3,4,5)
+Feedback: Normal-GamePlay
