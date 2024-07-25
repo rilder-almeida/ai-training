@@ -10,6 +10,12 @@ func (b *Board) pollEvents() chan struct{} {
 
 	go func() {
 		for {
+			if b.currentTurn == colorRed {
+				if isWinner := b.dropPiece(true); !isWinner {
+					b.runAISupport()
+				}
+			}
+
 			event := b.screen.PollEvent()
 
 			// Check if we received a key event.
@@ -46,9 +52,6 @@ func (b *Board) pollEvents() chan struct{} {
 				switch ev.Rune() {
 				case rune('n'):
 					b.newGame()
-					if b.currentTurn == colorRed {
-						b.runAISupport()
-					}
 
 				case rune(' '):
 					if isWinner := b.dropPiece(true); !isWinner {
@@ -69,10 +72,6 @@ func (b *Board) pollEvents() chan struct{} {
 			}
 		}
 	}()
-
-	if b.currentTurn == colorRed {
-		go b.runAISupport()
-	}
 
 	return quit
 }

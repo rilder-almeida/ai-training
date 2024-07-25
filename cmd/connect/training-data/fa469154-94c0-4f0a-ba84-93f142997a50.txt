@@ -3,7 +3,7 @@
 |🟢|🟢|🟢|🟢|🟢|🟢|🟢|
 |🟢|🟢|🟢|🟢|🟢|🟢|🟢|
 |🟢|🟢|🟢|🟢|🟢|🟢|🟢|
-|🟢|🟢|🟢|🔴|🔵|🔵|🟢|
+|🔵|🟢|🔴|🔵|🟢|🟢|🟢|
 
 Context:
 There are 2 spaces occupied by Blue markers and 1 space occupied by a Red marker on the game board.
@@ -11,6 +11,15 @@ There are 2 spaces occupied by Blue markers and 1 space occupied by a Red marker
 The Red player goes next.
 
 Blue:
+Moves: (?)
+
+- Say something 1
+- Say something 2
+- Say something 3
 
 Red:
-Moves: (3,4,5)
+Moves: (?)
+
+- Say something 1
+- Say something 2
+- Say something 3

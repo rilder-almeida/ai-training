@@ -1,0 +1,25 @@
+|🟢|🟢|🟢|🟢|🟢|🟢|🟢|
+|🟢|🟢|🟢|🟢|🟢|🟢|🟢|
+|🟢|🟢|🟢|🟢|🟢|🟢|🟢|
+|🟢|🟢|🟢|🟢|🟢|🟢|🟢|
+|🟢|🟢|🔴|🟢|🟢|🟢|🟢|
+|🔵|🟢|🔴|🔵|🟢|🟢|🟢|
+
+Context:
+There are 2 spaces occupied by Blue markers and 2 spaces occupied by Red markers on the game board.
+
+The Red player or Blue player could go next.
+
+Blue:
+Moves: (?)
+
+- Say something 1
+- Say something 2
+- Say something 3
+
+Red:
+Moves: (?)
+
+- Say something 1
+- Say something 2
+- Say something 3

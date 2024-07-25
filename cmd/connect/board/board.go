@@ -630,11 +630,6 @@ func (b *Board) runAISupport() {
 	b.lastAIMsg = ""
 	b.printAI()
 
-	// At this point the curren turn has changed.
-	if b.currentTurn == colorBlue {
-		return
-	}
-
 	// -------------------------------------------------------------------------
 	// Create a copy of the board.
 
@@ -671,6 +666,19 @@ func (b *Board) runAISupport() {
 
 	display := b.ai.SaveBoardData(data, blue, red, b.gameOver, b.lastWinner)
 
+	if display != "" {
+		b.lastAIMsg = fmt.Sprintf("- %s CRLF", display)
+		b.printAI()
+	}
+
+	// If blue goes there is nothing more for the AI to do.
+	if b.currentTurn == colorBlue {
+		return
+	}
+
+	// -------------------------------------------------------------------------
+	// Show AI information
+
 	if display == "" {
 		b.lastAIMsg = "- RUNNING AI"
 	} else {
@@ -678,9 +686,6 @@ func (b *Board) runAISupport() {
 	}
 
 	b.printAI()
-
-	// -------------------------------------------------------------------------
-	// Show AI information
 
 	board, err := b.ai.FindSimilarBoard(data)
 	if err != nil {
@@ -693,8 +698,7 @@ func (b *Board) runAISupport() {
 	b.printAI()
 
 	// -------------------------------------------------------------------------
-	// Show AI information
+	// Move AI piece.
 
 	b.movePlayerPiece(dirLeft)
-	b.dropPiece(true)
 }

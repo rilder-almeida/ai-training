@@ -224,38 +224,60 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 	f, _ := os.Create(ai.filePath + uuid.NewString() + ".txt")
 	defer f.Close()
 
-	f.WriteString(boardData)
-	f.WriteString("\n")
+	template := `%s
+Context:
+%s
+
+%s
+
+Blue:
+Moves: (?)
+
+- Say something 1
+- Say something 2
+- Say something 3
+
+Red:
+Moves: (?)
+
+- Say something 1
+- Say something 2
+- Say something 3
+`
+
+	var context1 string
+	var context2 string
 
 	switch {
 	case blue == 1 && (red == 0 || red > 1):
-		fmt.Fprintf(f, "There is %d space occupied by a Blue marker and %d spaces occupied by Red markers on the game board.\n\n", blue, red)
+		context1 = fmt.Sprintf("There is %d space occupied by a Blue marker and %d spaces occupied by Red markers on the game board.", blue, red)
 	case red == 1 && (blue == 0 || blue > 1):
-		fmt.Fprintf(f, "There are %d spaces occupied by Blue markers and %d space occupied by a Red marker on the game board.\n\n", blue, red)
+		context1 = fmt.Sprintf("There are %d spaces occupied by Blue markers and %d space occupied by a Red marker on the game board.", blue, red)
 	case blue == 1 && red == 1:
-		fmt.Fprintf(f, "There is %d space occupied by a Blue marker and %d space occupied by a Red marker on the game board.\n\n", blue, red)
+		context1 = fmt.Sprintf("There is %d space occupied by a Blue marker and %d space occupied by a Red marker on the game board.", blue, red)
 	default:
-		fmt.Fprintf(f, "There are %d spaces occupied by Blue markers and %d spaces occupied by Red markers on the game board.\n\n", blue, red)
+		context1 = fmt.Sprintf("There are %d spaces occupied by Blue markers and %d spaces occupied by Red markers on the game board.", blue, red)
 	}
 
 	switch gameOver {
 	case true:
 		if lastWinner == "Tie Game" {
-			f.WriteString("The game is over and Red and Blue have tied the game.\n")
+			context2 = "The game is over and Red and Blue have tied the game."
 		} else {
-			fmt.Fprintf(f, "The game is over and %s has won the game.\n", lastWinner)
+			context2 = fmt.Sprintf("The game is over and %s has won the game.", lastWinner)
 		}
 	default:
 		switch {
 		case blue > red:
-			f.WriteString("The Red player goes next and they should choose one of the following columns from the specified list:\n")
+			context2 = "The Red player goes next."
 		case red > blue:
-			f.WriteString("The Blue player goes next and they should choose one of the following columns from the specified list:\n")
+			context2 = "The Blue player goes next."
 		case red == blue:
-			f.WriteString("If the Blue player goes next they should choose one of the following columns from the specified list:\n\n")
-			f.WriteString("If the Red player goes next they should choose one of the following columns from the specified list:\n")
+			context2 = "The Red player or Blue player could go next."
 		}
 	}
+
+	fmt.Fprintf(f, template, boardData, context1, context2)
 
 	return "NEW TRAINING DATA GENERATED"
 }
