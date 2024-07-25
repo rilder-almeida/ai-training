@@ -7,18 +7,14 @@
 
 -- State
 Winner: None
-Turn: Blue or Red
+Turn: Red
 
 -- Blue
 Markers: 6
-Moves: (4)
-Feedback: Blocked-Win
+Moves:
+Feedback:
 
 -- Red
-Markers: 6
-Moves: (4)
-Feedback: Will-Win
-
-There are 6 spaces occupied by Blue markers and 5 spaces occupied by Red markers on the game board.
-
-The Red player goes next and they should choose one of the following columns from the specified list:
+Markers: 5
+Moves: (2,7,3)
+Feedback: Normal-GamePlay

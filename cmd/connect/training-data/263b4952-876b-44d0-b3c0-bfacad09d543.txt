@@ -5,8 +5,16 @@
 |🟢|🟢|🟢|🟢|🟢|🟢|🟢|
 |🔴|🟢|🔵|🟢|🟢|🟢|🟢|
 
-There is 1 space occupied by a Blue marker and 1 space occupied by a Red marker on the game board.
+-- State
+Winner: None
+Turn: Blue or Red
 
-If the Blue player goes next they should choose one of the following columns from the specified list:
+-- Blue
+Markers: 1
+Moves: (3,1,4)
+Feedback: Normal-GamePlay
 
-If the Red player goes next they should choose one of the following columns from the specified list:
+-- Red
+Markers: 1
+Moves: (1,4,3)
+Feedback: Normal-GamePlay
