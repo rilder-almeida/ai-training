@@ -42,7 +42,7 @@ func run() error {
 func questionResponse(ctx context.Context) error {
 
 	// Open a connection with ollama to access the model.
-	llm, err := ollama.New(ollama.WithModel("llama3"))
+	llm, err := ollama.New(ollama.WithModel("llama3.1"))
 	if err != nil {
 		return fmt.Errorf("ollama: %w", err)
 	}

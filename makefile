@@ -71,7 +71,7 @@ mongo:
 
 ollama-pull:
 	ollama pull mxbai-embed-large
-	ollama pull llama3
+	ollama pull llama3.1
 
 openwebui:
 	open -a "Google Chrome" http://localhost:3000/

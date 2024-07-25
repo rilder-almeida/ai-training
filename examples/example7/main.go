@@ -151,7 +151,7 @@ func vectorSearch(ctx context.Context, question string) ([]searchResult, error) 
 func questionResponse(ctx context.Context, question string, results []searchResult) error {
 
 	// Open a connection with ollama to access the model.
-	llm, err := ollama.New(ollama.WithModel("llama3"))
+	llm, err := ollama.New(ollama.WithModel("llama3.1"))
 	if err != nil {
 		return fmt.Errorf("ollama: %w", err)
 	}
