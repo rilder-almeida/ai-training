@@ -88,7 +88,7 @@ func New(client *mongo.Client, llm *ollama.LLM) (*AI, error) {
 	// Return the api
 
 	ai := AI{
-		filePath: "cmd/connect/board-files/",
+		filePath: "cmd/connect/training-data/",
 		client:   client,
 		col:      col,
 		llm:      llm,
@@ -260,7 +260,7 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 	return "NEW TRAINING DATA GENERATED"
 }
 
-// ProcessBoardFiles reads the board-files directory and saved the AI data needed
+// ProcessBoardFiles reads the training data directory and saved the AI data needed
 // for the AI to play connect 4.
 func (ai *AI) ProcessBoardFiles() error {
 	files, err := os.ReadDir(ai.filePath)
