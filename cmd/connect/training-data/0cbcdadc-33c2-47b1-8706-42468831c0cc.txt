@@ -5,21 +5,16 @@
 |🟢|🟢|🔴|🔵|🟢|🟢|🟢|
 |🟢|🟢|🔴|🔵|🔵|🟢|🟢|
 
-Context:
-There are 3 spaces occupied by Blue markers and 3 spaces occupied by Red markers on the game board.
+-- State
+Winner: None
+Turn: Blue or Red
 
-The Red player or Blue player could go next.
-
-Blue:
+-- Blue
+Markers: 3
 Moves: (3)
+Feedback: Blocked-Win
 
-- I'm not that easy to beat, do better.
-- You have to do better than that.
-- That must have hurt.
-
-Red:
+-- Red
+Markers: 3
 Moves: (3)
-
-- I just won the game.
-- How could you ever think you could beat me.
-- Better luck next time.
+Feedback: Won-Game
