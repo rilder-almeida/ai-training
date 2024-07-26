@@ -627,8 +627,6 @@ func (b *Board) printAI() {
 }
 
 func (b *Board) runAISupport() {
-	b.lastAIMsg = ""
-	b.printAI()
 
 	// -------------------------------------------------------------------------
 	// Create a copy of the board.
