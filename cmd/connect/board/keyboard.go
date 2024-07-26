@@ -8,12 +8,16 @@ import (
 func (b *Board) pollEvents() chan struct{} {
 	quit := make(chan struct{})
 
+	if b.currentTurn == colorRed {
+		b.runAISupport()
+		b.dropPiece(true)
+	}
+
 	go func() {
 		for {
 			if b.currentTurn == colorRed {
-				if isWinner := b.dropPiece(true); !isWinner {
-					b.runAISupport()
-				}
+				b.runAISupport()
+				b.dropPiece(true)
 			}
 
 			event := b.screen.PollEvent()
@@ -54,9 +58,7 @@ func (b *Board) pollEvents() chan struct{} {
 					b.newGame()
 
 				case rune(' '):
-					if isWinner := b.dropPiece(true); !isWinner {
-						b.runAISupport()
-					}
+					b.dropPiece(true)
 				}
 
 			case tcell.KeyLeft:
@@ -66,9 +68,7 @@ func (b *Board) pollEvents() chan struct{} {
 				b.movePlayerPiece(dirRight)
 
 			case tcell.KeyEnter, tcell.KeyDown:
-				if isWinner := b.dropPiece(true); !isWinner {
-					b.runAISupport()
-				}
+				b.dropPiece(true)
 			}
 		}
 	}()

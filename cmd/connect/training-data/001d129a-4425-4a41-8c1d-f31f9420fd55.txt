@@ -11,10 +11,10 @@ Turn:
 
 -- Blue
 Markers: 12
-Moves:
+Moves: ()
 Feedback: Won-Game
 
 -- Red
 Markers: 12
-Moves:
+Moves: ()
 Feedback: Lost-Game

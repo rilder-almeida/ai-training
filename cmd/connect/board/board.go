@@ -7,6 +7,8 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -696,7 +698,19 @@ func (b *Board) runAISupport() {
 	b.printAI()
 
 	// -------------------------------------------------------------------------
-	// Move AI piece.
+	// Calculate the next position
 
-	b.movePlayerPiece(dirLeft)
+	// Extract the Red section of the meta data and find the
+	moves := movesCount.FindAllString(board.Text, -1)
+	redMoves := strings.TrimRight(moves[1], ")")
+	redMoves = strings.TrimLeft(redMoves, "(")
+	ns := strings.Split(redMoves, ",")
+
+	// For now choose the first option.
+	inputCol, _ := strconv.Atoi(ns[0])
+
+	b.inputCol = inputCol
 }
+
+var movesCount = regexp.MustCompile(`\([0-9|,]*\)`)
+var feedback = regexp.MustCompile(`Feedback: [a-z|A-Z|-]+`)

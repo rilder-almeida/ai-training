@@ -10,7 +10,7 @@ Turn: Red
 
 -- Blue
 Markers: 7
-Moves:
+Moves: ()
 Feedback:
 
 -- Red

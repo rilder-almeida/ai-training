@@ -15,5 +15,5 @@ Feedback: Blocked-Win
 
 -- Red
 Markers: 16
-Moves:
+Moves: ()
 Feedback:

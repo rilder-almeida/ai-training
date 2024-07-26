@@ -11,10 +11,10 @@ Turn:
 
 -- Blue
 Markers: 21
-Moves:
+Moves: ()
 Feedback: Tie-Game
 
 -- Red
 Markers: 21
-Moves:
+Moves: ()
 Feedback: Tie-Game

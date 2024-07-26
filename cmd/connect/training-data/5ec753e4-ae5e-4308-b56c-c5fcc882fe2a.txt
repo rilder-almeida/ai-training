@@ -11,10 +11,10 @@ Turn: Red
 
 -- Blue
 Markers: 11
-Moves:
+Moves: ()
 Feedback:
 
 -- Red
 Markers: 10
-Moves: (1,3,5,7)
+Moves: (1,3,5)
 Feedback: Will-Win
