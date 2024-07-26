@@ -5,6 +5,15 @@
 |🔵|🔴|🔴|🔵|🔵|🔴|🔴|
 |🔴|🔵|🔵|🔴|🔴|🔵|🔵|
 
-There are 18 spaces occupied by Blue markers and 19 spaces occupied by Red markers on the game board.
+Winner: None
+Turn: Blue
 
-The Blue player goes next and they should choose one of the following columns from the specified list:
+-- Blue
+Markers: 18
+Moves: (1,2)
+Feedback: Normal-GamePlay
+
+-- Red
+Markers: 19
+Moves:
+Feedback:
