@@ -266,6 +266,9 @@ func (b *Board) movePlayerPiece(direction string) {
 }
 
 func (b *Board) dropPiece(animate bool) bool {
+	if b.gameOver {
+		return true
+	}
 
 	// Identify where the input marker is located.
 	column := padLeft + 2
@@ -675,6 +678,9 @@ func (b *Board) saveTrainingData() (string, string) {
 }
 
 func (b *Board) runAISupport(boardData string, display string) {
+	if b.gameOver {
+		return
+	}
 
 	// -------------------------------------------------------------------------
 	// Show AI information

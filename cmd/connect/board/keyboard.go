@@ -50,7 +50,7 @@ func (b *Board) pollEvents() chan struct{} {
 			}
 
 			// Only the blue player can control the piece.
-			if b.currentTurn == colorRed {
+			if !b.gameOver && b.currentTurn == colorRed {
 				b.screen.Beep()
 				continue
 			}
