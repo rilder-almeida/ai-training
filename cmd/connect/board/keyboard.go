@@ -8,15 +8,19 @@ import (
 func (b *Board) pollEvents() chan struct{} {
 	quit := make(chan struct{})
 
+	boardData, display := b.saveTrainingData()
+
 	if b.currentTurn == colorRed {
-		b.runAISupport()
+		b.runAISupport(boardData, display)
 		b.dropPiece(true)
 	}
 
 	go func() {
 		for {
+			boardData, display := b.saveTrainingData()
+
 			if b.currentTurn == colorRed {
-				b.runAISupport()
+				b.runAISupport(boardData, display)
 				b.dropPiece(true)
 			}
 

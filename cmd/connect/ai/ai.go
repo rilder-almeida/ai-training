@@ -232,12 +232,12 @@ Turn: %s
 -- Blue
 Markers: %d
 Moves: ()
-Feedback:
+Feedback: Normal-GamePlay, Blocked-Win, Will-Win, Won-Game, Lost-Game, Tie-Game
 
 -- Red
 Markers: %d
 Moves: ()
-Feedback:
+Feedback: Normal-GamePlay, Blocked-Win, Will-Win, Won-Game, Lost-Game, Tie-Game
 `
 
 	winner := "None"

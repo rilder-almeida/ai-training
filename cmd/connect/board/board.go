@@ -628,7 +628,7 @@ func (b *Board) printAI() {
 	}
 }
 
-func (b *Board) runAISupport() {
+func (b *Board) saveTrainingData() (string, string) {
 
 	// -------------------------------------------------------------------------
 	// Create a copy of the board.
@@ -671,10 +671,10 @@ func (b *Board) runAISupport() {
 		b.printAI()
 	}
 
-	// If blue goes there is nothing more for the AI to do.
-	if b.currentTurn == colorBlue {
-		return
-	}
+	return data, display
+}
+
+func (b *Board) runAISupport(boardData string, display string) {
 
 	// -------------------------------------------------------------------------
 	// Show AI information
@@ -687,7 +687,7 @@ func (b *Board) runAISupport() {
 
 	b.printAI()
 
-	board, err := b.ai.FindSimilarBoard(data)
+	board, err := b.ai.FindSimilarBoard(boardData)
 	if err != nil {
 		b.lastAIMsg = err.Error()
 		b.printAI()
@@ -705,6 +705,11 @@ func (b *Board) runAISupport() {
 	redMoves := strings.TrimRight(moves[1], ")")
 	redMoves = strings.TrimLeft(redMoves, "(")
 	ns := strings.Split(redMoves, ",")
+	if len(redMoves) == 0 {
+		blueMoves := strings.TrimRight(moves[0], ")")
+		blueMoves = strings.TrimLeft(blueMoves, "(")
+		ns = strings.Split(blueMoves, ",")
+	}
 
 	// For now choose the first option.
 	inputCol, _ := strconv.Atoi(ns[0])
