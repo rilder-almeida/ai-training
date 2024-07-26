@@ -724,10 +724,40 @@ func (b *Board) runAISupport(boardData string, display string) {
 		}
 	}
 
-	// For now choose the first option.
-	inputCol, _ := strconv.Atoi(ns[0])
+	choices := make([]int, 10)
+	choices[0] = conv(ns[0])
+	choices[1] = conv(ns[0])
+	choices[2] = conv(ns[0])
+	choices[3] = conv(ns[0])
+	choices[4] = conv(ns[0])
+	choices[5] = conv(ns[0])
+	choices[6] = conv(ns[0])
+	choices[7] = conv(ns[0])
+	choices[8] = conv(ns[0])
+	choices[9] = conv(ns[0])
+	if len(ns) > 1 {
+		choices[6] = conv(ns[1])
+		choices[7] = conv(ns[1])
+		choices[8] = conv(ns[1])
+		choices[9] = conv(ns[1])
+	}
+	if len(ns) > 2 {
+		choices[8] = conv(ns[2])
+	}
 
-	b.inputCol = inputCol
+	nBig, _ := rand.Int(rand.Reader, big.NewInt(10))
+
+	b.inputCol = choices[int(nBig.Int64())]
+
+	b.print(padLeft+2+(cellWidth*(3)), padTop-1, " ")
+	b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
+	b.screen.Show()
+	time.Sleep(250 * time.Millisecond)
+}
+
+func conv(v string) int {
+	n, _ := strconv.Atoi(v)
+	return n
 }
 
 var movesCount = regexp.MustCompile(`\([0-9|,]*\)`)
