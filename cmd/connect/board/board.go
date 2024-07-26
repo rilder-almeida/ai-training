@@ -706,6 +706,9 @@ func (b *Board) runAISupport(boardData string, display string) {
 	// -------------------------------------------------------------------------
 	// Calculate the next position
 
+	// WE WANT TO USE 1 of the 3 values when more than 1 exists.
+	// WHAT TO DO WHEN WE HAVE A BLUE BOARD?
+
 	// Extract the Red section of the meta data and find the
 	moves := movesCount.FindAllString(board.Text, -1)
 	redMoves := strings.TrimRight(moves[1], ")")
@@ -714,7 +717,11 @@ func (b *Board) runAISupport(boardData string, display string) {
 	if len(redMoves) == 0 {
 		blueMoves := strings.TrimRight(moves[0], ")")
 		blueMoves = strings.TrimLeft(blueMoves, "(")
-		ns = strings.Split(blueMoves, ",")
+		if len(blueMoves) == 0 {
+			ns = []string{"4"}
+		} else {
+			ns = strings.Split(blueMoves, ",")
+		}
 	}
 
 	// For now choose the first option.
