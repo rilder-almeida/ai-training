@@ -289,31 +289,37 @@ func (ai *AI) ProcessBoardFiles() error {
 
 		boardID := strings.TrimSuffix(file.Name(), ".txt")
 
-		fmt.Printf("Checking if file exists in DB: %s\n", boardID)
-
-		if _, err := ai.findBoard(ctx, boardID); err == nil {
-			fmt.Printf("Checking is file exists in DB: %s, EXISTS\n", boardID)
-			continue
-		}
-
-		fmt.Printf("Creating board data: %s\n", boardID)
+		fmt.Printf("Creating board: %s\n", boardID)
 
 		board, err := ai.newBoard(boardID)
 		if err != nil {
 			return fmt.Errorf("new board: %s: %w", boardID, err)
 		}
 
-		if strings.Contains(board.Text, "Turn: Red") || strings.Contains(board.Text, "Turn: Blue or Red") {
-			fmt.Printf("Saving board data: %s\n", boardID)
-
-			if err := ai.saveBoard(ctx, board); err != nil {
-				return fmt.Errorf("saving board: %s: %w", boardID, err)
-			}
-
+		if !strings.Contains(board.Text, "Turn: Red") && !strings.Contains(board.Text, "Turn: Blue or Red") {
+			fmt.Printf("Blue Turn Only Board: %s\n", boardID)
 			continue
 		}
 
-		fmt.Printf("Blue Turn Only Board: %s\n", boardID)
+		fmt.Printf("Checking if board exists in DB: %s\n", boardID)
+
+		if _, err := ai.findBoard(ctx, boardID); err == nil {
+			fmt.Printf("Checking is file exists in DB: %s, EXISTS\n", boardID)
+			continue
+		}
+
+		fmt.Printf("Create board embedding: %s\n", boardID)
+
+		board, err = ai.createEmbedding(board)
+		if err != nil {
+			return fmt.Errorf("create embedding: %s: %w", boardID, err)
+		}
+
+		fmt.Printf("Saving board data: %s\n", boardID)
+
+		if err := ai.saveBoard(ctx, board); err != nil {
+			return fmt.Errorf("saving board: %s: %w", boardID, err)
+		}
 	}
 
 	return nil
@@ -370,19 +376,24 @@ func (ai *AI) newBoard(boardID string) (Board, error) {
 
 	boardData := board.String()
 
-	embedding, err := ai.CalculateEmbedding(boardData)
-	if err != nil {
-		return Board{}, fmt.Errorf("calculate embedding: %s: %w", boardID, err)
-	}
-
 	b := Board{
-		ID:        boardID,
-		Board:     boardData,
-		Text:      text.String(),
-		Embedding: embedding,
+		ID:    boardID,
+		Board: boardData,
+		Text:  text.String(),
 	}
 
 	return b, nil
+}
+
+func (ai *AI) createEmbedding(board Board) (Board, error) {
+	embedding, err := ai.CalculateEmbedding(board.Board)
+	if err != nil {
+		return Board{}, fmt.Errorf("calculate embedding: %s: %w", board.ID, err)
+	}
+
+	board.Embedding = embedding
+
+	return board, nil
 }
 
 func (ai *AI) saveBoard(ctx context.Context, board Board) error {

@@ -512,6 +512,7 @@ stop:
 
 	if tie {
 		b.showWinner("Tie Game")
+		return true
 	}
 
 	return false
@@ -545,8 +546,6 @@ func (b *Board) showWinner(color string) {
 // closeModal closes the modal dialog box.
 func (b *Board) closeModal() {
 	b.modalUp = false
-
-	b.drawInit()
 }
 
 // drawBox draws an empty box on the screen.
@@ -670,7 +669,7 @@ func (b *Board) saveTrainingData() (string, string) {
 	display := b.ai.SaveBoardData(data, blue, red, b.gameOver, b.lastWinner)
 
 	if display != "" {
-		b.lastAIMsg = fmt.Sprintf("- %s CRLF", display)
+		b.lastAIMsg = fmt.Sprintf("- %s", display)
 		b.printAI()
 	}
 

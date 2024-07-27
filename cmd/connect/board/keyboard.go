@@ -12,16 +12,19 @@ func (b *Board) pollEvents() chan struct{} {
 
 	if b.currentTurn == colorRed {
 		b.runAISupport(boardData, display)
-		b.dropPiece(true)
+		if b.dropPiece(true) {
+			b.saveTrainingData()
+		}
 	}
 
 	go func() {
 		for {
-			boardData, display := b.saveTrainingData()
-
 			if b.currentTurn == colorRed {
+				boardData, display := b.saveTrainingData()
 				b.runAISupport(boardData, display)
-				b.dropPiece(true)
+				if b.dropPiece(true) {
+					b.saveTrainingData()
+				}
 			}
 
 			event := b.screen.PollEvent()
@@ -33,6 +36,8 @@ func (b *Board) pollEvents() chan struct{} {
 			}
 
 			keyType := ev.Key()
+
+			b.saveTrainingData()
 
 			// Allow the user to quit the game at any time.
 			if keyType == tcell.KeyRune {
@@ -62,7 +67,9 @@ func (b *Board) pollEvents() chan struct{} {
 					b.newGame()
 
 				case rune(' '):
-					b.dropPiece(true)
+					if b.dropPiece(true) {
+						b.saveTrainingData()
+					}
 				}
 
 			case tcell.KeyLeft:
@@ -72,7 +79,9 @@ func (b *Board) pollEvents() chan struct{} {
 				b.movePlayerPiece(dirRight)
 
 			case tcell.KeyEnter, tcell.KeyDown:
-				b.dropPiece(true)
+				if b.dropPiece(true) {
+					b.saveTrainingData()
+				}
 			}
 		}
 	}()
