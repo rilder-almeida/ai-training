@@ -21,6 +21,11 @@ connect:
 connect-train:
 	go run cmd/connect/main.go --train true
 
+connect-save:
+	git add -A
+	git commit -am "saving training data"
+	git push
+
 # ==============================================================================
 # Examples
 
