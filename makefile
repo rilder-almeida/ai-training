@@ -3,6 +3,16 @@ SHELL_PATH = /bin/ash
 SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 
 # ==============================================================================
+# Mongo support
+#
+# use connect4
+#
+# db.boards.deleteMany({})
+#
+# db.boards.deleteOne({ board_id: 'e7832ae9-ac71-4408-8e27-38b216390de2' })
+
+
+# ==============================================================================
 # Games
 
 connect:

@@ -16,5 +16,5 @@ Feedback:
 
 -- Red
 Markers: 1
-Moves: (5,4,3)
+Moves: (3,6,4)
 Feedback: Normal-GamePlay
