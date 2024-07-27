@@ -170,7 +170,7 @@ func (b *Board) drawEmptyGameBoard() {
 	b.print(10, 1, "Connect 4 AI Version")
 	b.print(0, boardHeight+padTop+1, "   ①    ②    ③    ④    ⑤    ⑥    ⑦")
 
-	b.print(boardWidth+3, padTop-1, "<n> new game      <q> quit game")
+	b.print(boardWidth+3, padTop-1, "<n> new game   <q> quit game   ")
 	b.print(boardWidth+3, padTop+1, "Last Winner:                   ")
 
 	screenWidth, _ := b.screen.Size()
