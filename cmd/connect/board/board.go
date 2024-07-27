@@ -715,14 +715,14 @@ func (b *Board) runAISupport(boardData string, display string) {
 		board = boards[0]
 	}
 
-	b.lastAIMsg = fmt.Sprintf("SCORE: %.2f%% CRLF %s", board.Score*100, board.Text)
-	b.printAI()
-
 	// -------------------------------------------------------------------------
 	// Have the AI pick their next move
 
 	b.pickColumn(board)
 }
+
+var movesCount = regexp.MustCompile(`\([0-9|,]*\)`)
+var feedback = regexp.MustCompile(`Feedback: [a-z|A-Z|-]+`)
 
 func (b *Board) pickColumn(board ai.SimilarBoard) {
 
@@ -783,14 +783,17 @@ func (b *Board) pickColumn(board ai.SimilarBoard) {
 
 		// Does that column have an open space?
 		if !b.cells[tryChoice][0].hasPiece {
-			choice = tryChoice
+			choice = choices[tryChoice]
 			break
 		}
 	}
 
+	b.lastAIMsg = fmt.Sprintf("CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", choice, board.Score*100, board.Text)
+	b.printAI()
+
 	// If we didn't find a valid column, find an open one.
 	if choice == -1 {
-		for i := range 7 {
+		for i := range 6 {
 			if !b.cells[i][0].hasPiece {
 				choice = i
 				break
@@ -812,6 +815,3 @@ func conv(v string) int {
 	n, _ := strconv.Atoi(v)
 	return n
 }
-
-var movesCount = regexp.MustCompile(`\([0-9|,]*\)`)
-var feedback = regexp.MustCompile(`Feedback: [a-z|A-Z|-]+`)
