@@ -303,11 +303,17 @@ func (ai *AI) ProcessBoardFiles() error {
 			return fmt.Errorf("new board: %s: %w", boardID, err)
 		}
 
-		fmt.Printf("Saving board data: %s\n", boardID)
+		if strings.Contains(board.Text, "Turn: Red") || strings.Contains(board.Text, "Turn: Blue or Red") {
+			fmt.Printf("Saving board data: %s\n", boardID)
 
-		if err := ai.saveBoard(ctx, board); err != nil {
-			return fmt.Errorf("saving board: %s: %w", boardID, err)
+			if err := ai.saveBoard(ctx, board); err != nil {
+				return fmt.Errorf("saving board: %s: %w", boardID, err)
+			}
+
+			continue
 		}
+
+		fmt.Printf("Blue Turn Only Board: %s\n", boardID)
 	}
 
 	return nil

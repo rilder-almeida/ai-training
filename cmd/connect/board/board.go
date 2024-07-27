@@ -694,7 +694,7 @@ func (b *Board) runAISupport(boardData string, display string) {
 	b.printAI()
 
 	// -------------------------------------------------------------------------
-	// Find a similart board from the training data
+	// Find a similar boards from the training data
 
 	boards, err := b.ai.FindSimilarBoard(boardData)
 	if err != nil {
@@ -703,44 +703,22 @@ func (b *Board) runAISupport(boardData string, display string) {
 		return
 	}
 
-	var board ai.SimilarBoard
-	for _, useBoard := range boards {
-		if strings.Contains(useBoard.Text, "Turn: Red") || strings.Contains(useBoard.Text, "Turn: Blue or Red") {
-			board = useBoard
-			break
-		}
-	}
-
-	if board.Text == "" {
-		board = boards[0]
-	}
-
 	// -------------------------------------------------------------------------
 	// Have the AI pick their next move
 
-	b.pickColumn(board)
+	b.pickColumn(boards[0])
 }
 
-var movesCount = regexp.MustCompile(`\([0-9|,]*\)`)
+var movesOptions = regexp.MustCompile(`\([0-9|,]*\)`)
 var feedback = regexp.MustCompile(`Feedback: [a-z|A-Z|-]+`)
 
 func (b *Board) pickColumn(board ai.SimilarBoard) {
 
-	// Extract the Red section of the meta data. If there are no moves for
-	// red, then use blue, else use column 4.
-	moves := movesCount.FindAllString(board.Text, -1)
+	// Extract data from the Moves section.
+	moves := movesOptions.FindAllString(board.Text, -1)
 	redMoves := strings.TrimRight(moves[1], ")")
 	redMoves = strings.TrimLeft(redMoves, "(")
 	ns := strings.Split(redMoves, ",")
-	if len(redMoves) == 0 {
-		blueMoves := strings.TrimRight(moves[0], ")")
-		blueMoves = strings.TrimLeft(blueMoves, "(")
-		if len(blueMoves) == 0 {
-			ns = []string{"4"}
-		} else {
-			ns = strings.Split(blueMoves, ",")
-		}
-	}
 
 	// I'm going to assume that after 20 iterations all three potential
 	// choices will be tried as a valid move. If we only have 1, don't
@@ -788,18 +766,22 @@ func (b *Board) pickColumn(board ai.SimilarBoard) {
 		}
 	}
 
-	b.lastAIMsg = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.Score*100, board.Text)
-	b.printAI()
-
 	// If we didn't find a valid column, find an open one.
 	if choice == -1 {
 		for i := range 6 {
 			if !b.cells[i][0].hasPiece {
-				choice = i
+				choice = i + 1
 				break
 			}
 		}
 	}
+
+	if choice == -1 {
+		panic(fmt.Sprintf("BOARD: %s CRLF CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.Score*100, board.Text))
+	}
+
+	b.lastAIMsg = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.Score*100, board.Text)
+	b.printAI()
 
 	b.inputCol = choice
 
