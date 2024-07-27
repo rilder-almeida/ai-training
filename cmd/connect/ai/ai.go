@@ -115,10 +115,10 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
 }
 
 // FindSimilarBoard performs a vector search to find the most similar board.
-func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
+func (ai *AI) FindSimilarBoard(boardData string) ([]SimilarBoard, error) {
 	embedding, err := ai.CalculateEmbedding(boardData)
 	if err != nil {
-		return SimilarBoard{}, err
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -133,7 +133,7 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 				"exact":       true,
 				"path":        "embedding",
 				"queryVector": embedding,
-				"limit":       1,
+				"limit":       5,
 			}},
 		},
 		{{
@@ -152,16 +152,16 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 
 	cur, err := ai.col.Aggregate(ctx, pipeline)
 	if err != nil {
-		return SimilarBoard{}, fmt.Errorf("aggregate: %w", err)
+		return nil, fmt.Errorf("aggregate: %w", err)
 	}
 	defer cur.Close(ctx)
 
 	var results []SimilarBoard
 	if err := cur.All(ctx, &results); err != nil {
-		return SimilarBoard{}, fmt.Errorf("all: %w", err)
+		return nil, fmt.Errorf("all: %w", err)
 	}
 
-	return results[0], nil
+	return results, nil
 }
 
 // SaveBoardData knows how to write a board file with the following information.

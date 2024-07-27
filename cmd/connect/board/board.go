@@ -693,11 +693,26 @@ func (b *Board) runAISupport(boardData string, display string) {
 
 	b.printAI()
 
-	board, err := b.ai.FindSimilarBoard(boardData)
+	// -------------------------------------------------------------------------
+	// Find a similart board from the training data
+
+	boards, err := b.ai.FindSimilarBoard(boardData)
 	if err != nil {
 		b.lastAIMsg = err.Error()
 		b.printAI()
 		return
+	}
+
+	var board ai.SimilarBoard
+	for _, useBoard := range boards {
+		if strings.Contains(useBoard.Text, "Turn: Red") || strings.Contains(useBoard.Text, "Turn: Blue or Red") {
+			board = useBoard
+			break
+		}
+	}
+
+	if board.Text == "" {
+		board = boards[0]
 	}
 
 	b.lastAIMsg = fmt.Sprintf("SCORE: %.2f%% CRLF %s", board.Score*100, board.Text)
@@ -706,10 +721,8 @@ func (b *Board) runAISupport(boardData string, display string) {
 	// -------------------------------------------------------------------------
 	// Calculate the next position
 
-	// WE WANT TO USE 1 of the 3 values when more than 1 exists.
-	// WHAT TO DO WHEN WE HAVE A BLUE BOARD?
-
-	// Extract the Red section of the meta data and find the
+	// Extract the Red section of the meta data. If there are no moves for
+	// red, then use blue, else use column 4.
 	moves := movesCount.FindAllString(board.Text, -1)
 	redMoves := strings.TrimRight(moves[1], ")")
 	redMoves = strings.TrimLeft(redMoves, "(")
@@ -724,6 +737,9 @@ func (b *Board) runAISupport(boardData string, display string) {
 		}
 	}
 
+	// When 1 choice: 100%
+	// When 2 choices: 70%,30
+	// When 3 choices: 60%,30%,10%
 	choices := make([]int, 10)
 	choices[0] = conv(ns[0])
 	choices[1] = conv(ns[0])
@@ -742,13 +758,14 @@ func (b *Board) runAISupport(boardData string, display string) {
 		choices[9] = conv(ns[1])
 	}
 	if len(ns) > 2 {
-		choices[8] = conv(ns[2])
+		choices[9] = conv(ns[2])
 	}
 
 	nBig, _ := rand.Int(rand.Reader, big.NewInt(10))
 
 	b.inputCol = choices[int(nBig.Int64())]
 
+	// Animate the marker moving across before it falls.
 	b.print(padLeft+2+(cellWidth*(3)), padTop-1, " ")
 	b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
 	b.screen.Show()
