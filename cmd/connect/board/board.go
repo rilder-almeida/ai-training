@@ -779,16 +779,16 @@ func (b *Board) pickColumn(board ai.SimilarBoard) {
 
 		// Randomly pick a choice.
 		nBig, _ := rand.Int(rand.Reader, big.NewInt(10))
-		tryChoice := int(nBig.Int64())
+		tryChoice := choices[int(nBig.Int64())]
 
 		// Does that column have an open space?
-		if !b.cells[tryChoice][0].hasPiece {
-			choice = choices[tryChoice]
+		if !b.cells[tryChoice-1][0].hasPiece {
+			choice = tryChoice
 			break
 		}
 	}
 
-	b.lastAIMsg = fmt.Sprintf("CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", choice, board.Score*100, board.Text)
+	b.lastAIMsg = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.Score*100, board.Text)
 	b.printAI()
 
 	// If we didn't find a valid column, find an open one.
