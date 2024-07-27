@@ -47,13 +47,6 @@ func (b *Board) pollEvents() chan struct{} {
 				}
 			}
 
-			// Allow the user to clear the modal.
-			if keyType == tcell.KeyEscape {
-				if b.modalUp {
-					b.closeModal()
-				}
-			}
-
 			// Only the blue player can control the piece.
 			if !b.gameOver && b.currentTurn == colorRed {
 				b.screen.Beep()

@@ -62,7 +62,6 @@ type Board struct {
 	lastWinnerMsg string
 	lastAIMsg     string
 	gameOver      bool
-	modalUp       bool
 }
 
 // New contructs a game board and renders the board.
@@ -532,20 +531,9 @@ func (b *Board) showWinner(color string) {
 	}
 
 	b.gameOver = true
-	b.modalUp = true
 
-	b.screen.HideCursor()
-	b.drawBox(5, 8, 33, 13)
-
-	h := 10
-	l := len(b.lastWinnerMsg)
-	x := 19 - (l / 2)
-	b.print(x, h, b.lastWinnerMsg)
-}
-
-// closeModal closes the modal dialog box.
-func (b *Board) closeModal() {
-	b.modalUp = false
+	b.print(12, padTop-1, "Winner "+b.lastWinnerMsg)
+	b.screen.Show()
 }
 
 // drawBox draws an empty box on the screen.
@@ -593,7 +581,7 @@ func (b *Board) print(x, y int, str string) {
 
 func (b *Board) printAI() {
 	screenWidth, _ := b.screen.Size()
-	actWidth := (screenWidth - boardWidth - 9)
+	actWidth := (screenWidth - boardWidth - 8)
 
 	row := boardWidth + 5
 	col := padTop + 4
