@@ -289,6 +289,13 @@ func (ai *AI) ProcessBoardFiles() error {
 
 		boardID := strings.TrimSuffix(file.Name(), ".txt")
 
+		fmt.Printf("Checking if board exists in DB: %s\n", boardID)
+
+		if _, err := ai.findBoard(ctx, boardID); err == nil {
+			fmt.Printf("Board EXISTS in DB: %s\n", boardID)
+			continue
+		}
+
 		fmt.Printf("Creating board: %s\n", boardID)
 
 		board, err := ai.newBoard(boardID)
@@ -298,13 +305,6 @@ func (ai *AI) ProcessBoardFiles() error {
 
 		if !strings.Contains(board.Text, "Turn: Red") && !strings.Contains(board.Text, "Turn: Blue or Red") {
 			fmt.Printf("Blue Turn Only Board: %s\n", boardID)
-			continue
-		}
-
-		fmt.Printf("Checking if board exists in DB: %s\n", boardID)
-
-		if _, err := ai.findBoard(ctx, boardID); err == nil {
-			fmt.Printf("Checking is file exists in DB: %s, EXISTS\n", boardID)
 			continue
 		}
 
