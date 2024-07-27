@@ -719,7 +719,12 @@ func (b *Board) runAISupport(boardData string, display string) {
 	b.printAI()
 
 	// -------------------------------------------------------------------------
-	// Calculate the next position
+	// Have the AI pick their next move
+
+	b.pickColumn(board)
+}
+
+func (b *Board) pickColumn(board ai.SimilarBoard) {
 
 	// Extract the Red section of the meta data. If there are no moves for
 	// red, then use blue, else use column 4.
@@ -737,39 +742,70 @@ func (b *Board) runAISupport(boardData string, display string) {
 		}
 	}
 
-	// When 1 choice: 100%
-	// When 2 choices: 70%,30
-	// When 3 choices: 60%,30%,10%
-	choices := make([]int, 10)
-	choices[0] = conv(ns[0])
-	choices[1] = conv(ns[0])
-	choices[2] = conv(ns[0])
-	choices[3] = conv(ns[0])
-	choices[4] = conv(ns[0])
-	choices[5] = conv(ns[0])
-	choices[6] = conv(ns[0])
-	choices[7] = conv(ns[0])
-	choices[8] = conv(ns[0])
-	choices[9] = conv(ns[0])
-	if len(ns) > 1 {
-		choices[6] = conv(ns[1])
-		choices[7] = conv(ns[1])
-		choices[8] = conv(ns[1])
-		choices[9] = conv(ns[1])
-	}
-	if len(ns) > 2 {
-		choices[9] = conv(ns[2])
+	// I'm going to assume that after 20 iterations all three potential
+	// choices will be tried as a valid move. If we only have 1, don't
+	// waste time.
+	iterate := 20
+	if len(ns) == 1 {
+		iterate = 1
 	}
 
-	nBig, _ := rand.Int(rand.Reader, big.NewInt(10))
+	choice := -1
+	for range iterate {
 
-	b.inputCol = choices[int(nBig.Int64())]
+		// When 1 choice: 100%
+		// When 2 choices: 70%,30
+		// When 3 choices: 60%,30%,10%
+		choices := make([]int, 10)
+		choices[0] = conv(ns[0])
+		choices[1] = conv(ns[0])
+		choices[2] = conv(ns[0])
+		choices[3] = conv(ns[0])
+		choices[4] = conv(ns[0])
+		choices[5] = conv(ns[0])
+		choices[6] = conv(ns[0])
+		choices[7] = conv(ns[0])
+		choices[8] = conv(ns[0])
+		choices[9] = conv(ns[0])
+		if len(ns) > 1 {
+			choices[6] = conv(ns[1])
+			choices[7] = conv(ns[1])
+			choices[8] = conv(ns[1])
+			choices[9] = conv(ns[1])
+		}
+		if len(ns) > 2 {
+			choices[9] = conv(ns[2])
+		}
+
+		// Randomly pick a choice.
+		nBig, _ := rand.Int(rand.Reader, big.NewInt(10))
+		tryChoice := int(nBig.Int64())
+
+		// Does that column have an open space?
+		if !b.cells[tryChoice][0].hasPiece {
+			choice = tryChoice
+			break
+		}
+	}
+
+	// If we didn't find a valid column, find an open one.
+	if choice == -1 {
+		for i := range 7 {
+			if !b.cells[i][0].hasPiece {
+				choice = i
+				break
+			}
+		}
+	}
+
+	b.inputCol = choice
 
 	// Animate the marker moving across before it falls.
 	b.print(padLeft+2+(cellWidth*(3)), padTop-1, " ")
 	b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
 	b.screen.Show()
 	time.Sleep(250 * time.Millisecond)
+
 }
 
 func conv(v string) int {
