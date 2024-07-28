@@ -82,14 +82,14 @@ func New(ai *ai.AI) (*Board, error) {
 	style = style.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 
 	currentTurn := colorBlue
-	// nBig, err := rand.Int(rand.Reader, big.NewInt(100))
-	// if err != nil {
-	// 	return nil, fmt.Errorf("random number: %w", err)
-	// }
+	nBig, err := rand.Int(rand.Reader, big.NewInt(100))
+	if err != nil {
+		return nil, fmt.Errorf("random number: %w", err)
+	}
 
-	// if n := nBig.Int64(); n%2 == 0 {
-	// 	currentTurn = colorRed
-	// }
+	if n := nBig.Int64(); n%2 == 0 {
+		currentTurn = colorRed
+	}
 
 	board := Board{
 		ai:          ai,
