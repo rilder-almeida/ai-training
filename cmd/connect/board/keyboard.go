@@ -1,6 +1,9 @@
 package board
 
 import (
+	"fmt"
+	"runtime/debug"
+
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -18,6 +21,14 @@ func (b *Board) pollEvents() chan struct{} {
 	}
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				b.screen.Clear()
+				fmt.Println(r)
+				debug.PrintStack()
+			}
+		}()
+
 		for {
 			if b.currentTurn == colorRed {
 				boardData, display := b.saveTrainingData()
