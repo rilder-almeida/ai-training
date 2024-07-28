@@ -11,6 +11,7 @@ book.embeddings
 db_data/
 ollama/
 openwebui/
+log.txt
 
 # Test binary, built with `go test -c`
 *.test

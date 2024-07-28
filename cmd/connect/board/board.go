@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -597,6 +598,10 @@ func (b *Board) printAI() {
 
 	row = boardWidth + 5
 	col = padTop + 4
+
+	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	defer f.Close()
+	f.WriteString(b.lastAIMsg)
 
 	scanner := bufio.NewScanner(bytes.NewReader([]byte(b.lastAIMsg)))
 	scanner.Split(bufio.ScanWords)

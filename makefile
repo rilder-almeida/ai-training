@@ -25,6 +25,7 @@ connect-save:
 	git add -A
 	git commit -am "saving training data"
 	git push
+	rm log.txt
 
 # ==============================================================================
 # Examples
