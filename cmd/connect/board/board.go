@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -700,6 +701,13 @@ var movesOptions = regexp.MustCompile(`\([0-9|,]*\)`)
 var feedback = regexp.MustCompile(`Feedback: [a-z|A-Z|-]+`)
 
 func (b *Board) pickColumn(board ai.SimilarBoard) {
+	defer func() {
+		if r := recover(); r != nil {
+			b.screen.Clear()
+			fmt.Println(r)
+			debug.PrintStack()
+		}
+	}()
 
 	// Extract data from the Moves section.
 	moves := movesOptions.FindAllString(board.Text, -1)
@@ -764,7 +772,9 @@ func (b *Board) pickColumn(board ai.SimilarBoard) {
 	}
 
 	if choice == -1 {
-		panic(fmt.Sprintf("BOARD: %s CRLF CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.Score*100, board.Text))
+		b.lastAIMsg = fmt.Sprintf("**STOP** CLRF BOARD: %s CRLF CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.Score*100, board.Text)
+		b.printAI()
+		return
 	}
 
 	b.lastAIMsg = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.Score*100, board.Text)
