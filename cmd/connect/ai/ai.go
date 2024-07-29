@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -113,15 +112,19 @@ func (ai *AI) CreateAIResponse(feedBack string, blueMarkerCount string, redMarke
 
 	switch feedBack {
 	case "Normal-GamePlay":
-		prompt = fmt.Sprintf(promptNormalGamePlayPos, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
-		if n := rand.Intn(100); n%2 == 0 {
-			prompt = fmt.Sprintf(promptNormalGamePlayNeg, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
-		}
-
+		prompt = fmt.Sprintf(promptNormalGamePlay, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
 	case "Will-Win":
-		prompt = fmt.Sprintf(promptWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+		if currentTurnColor == "Red" {
+			prompt = fmt.Sprintf(promptRedWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+		} else {
+			prompt = fmt.Sprintf(promptBlueWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+		}
 	case "Won-Game":
-		prompt = fmt.Sprintf(promptWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+		if currentTurnColor == "Red" {
+			prompt = fmt.Sprintf(promptRedWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+		} else {
+			prompt = fmt.Sprintf(promptBlueWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+		}
 	case "Lost-Game":
 		prompt = fmt.Sprintf(promptLostGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
 	case "Tie-Game":

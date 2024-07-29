@@ -49,6 +49,7 @@ const (
 var movesOptions = regexp.MustCompile(`\([0-9|,]*\)`)
 var feedback = regexp.MustCompile(`Feedback: [a-z|A-Z|-]+`)
 var markers = regexp.MustCompile(`Markers: [0-9]+`)
+var winner = regexp.MustCompile(`Winner: [a-z|A-Z]+`)
 
 type cell struct {
 	hasPiece bool
@@ -56,9 +57,12 @@ type cell struct {
 }
 
 type chat struct {
-	choice      int
-	currentTurn string
-	board       ai.SimilarBoard
+	choice           int
+	currentTurnColor string
+	feedBack         string
+	blueMarkerCount  string
+	redMarkerCounted string
+	lastMove         int
 }
 
 // Board represents the game board and all its state.
@@ -115,14 +119,7 @@ func New(ai *ai.AI) (*Board, error) {
 		for {
 			chat := <-board.chat
 
-			feedBacks := feedback.FindAllString(chat.board.Text, -1)
-			markers := markers.FindAllString(chat.board.Text, -1)
-
-			feedBack := strings.TrimPrefix(feedBacks[0], "Feedback: ")
-			blueMarkers := strings.TrimPrefix(markers[0], "Markers: ")
-			redMarkers := strings.TrimPrefix(markers[1], "Markers: ")
-
-			response, _ := ai.CreateAIResponse(feedBack, blueMarkers, redMarkers, chat.currentTurn, chat.choice)
+			response, _ := ai.CreateAIResponse(chat.feedBack, chat.blueMarkerCount, chat.redMarkerCounted, chat.currentTurnColor, chat.choice)
 
 			board.lastAIMsg = response
 			board.printAI()
@@ -565,6 +562,42 @@ func (b *Board) showWinner(color string) {
 
 	b.print(12, padTop-1, "Winner "+b.lastWinnerMsg)
 	b.screen.Show()
+
+	boardData, _ := b.saveTrainingData()
+
+	// Provide this chat information for LLM processing. If the LLM is
+	// currently busy, we will throw this away.
+	boards, err := b.ai.FindSimilarBoard(boardData)
+	if err != nil {
+		b.lastAIMsg = err.Error()
+		b.printAI()
+		return
+	}
+
+	b.createAIMessage(b.inputCol, color, boards[0])
+}
+
+func (b *Board) createAIMessage(choice int, currentTurn string, board ai.SimilarBoard) {
+	feedBacks := feedback.FindAllString(board.Text, -1)
+	markers := markers.FindAllString(board.Text, -1)
+
+	feedBack := strings.TrimPrefix(feedBacks[0], "Feedback: ")
+	blueMarkers := strings.TrimPrefix(markers[0], "Markers: ")
+	redMarkers := strings.TrimPrefix(markers[1], "Markers: ")
+
+	ch := chat{
+		choice:           choice,
+		currentTurnColor: currentTurn,
+		feedBack:         feedBack,
+		blueMarkerCount:  blueMarkers,
+		redMarkerCounted: redMarkers,
+		lastMove:         b.inputCol,
+	}
+
+	select {
+	case b.chat <- ch:
+	default:
+	}
 }
 
 // drawBox draws an empty box on the screen.
@@ -800,12 +833,7 @@ func (b *Board) pickColumn(board ai.SimilarBoard) {
 	b.lastAIMsg = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.Score*100, board.Text)
 	b.printAI()
 
-	// Provide this chat information for LLM processing. If the LLM is
-	// currently busy, we will throw this away.
-	select {
-	case b.chat <- chat{choice: choice, currentTurn: b.currentTurn, board: board}:
-	default:
-	}
+	b.createAIMessage(choice, b.currentTurn, board)
 
 	b.inputCol = choice
 
