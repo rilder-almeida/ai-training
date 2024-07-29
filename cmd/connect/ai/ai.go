@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/ardanlabs/ai-training/foundation/mongodb"
 	"github.com/google/uuid"
+	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/ollama"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -42,11 +44,12 @@ type AI struct {
 	filePath string
 	client   *mongo.Client
 	col      *mongo.Collection
-	llm      *ollama.LLM
+	embed    *ollama.LLM
+	chat     *ollama.LLM
 }
 
 // New construct the AI api for use.
-func New(client *mongo.Client, llm *ollama.LLM) (*AI, error) {
+func New(client *mongo.Client, embed *ollama.LLM, chat *ollama.LLM) (*AI, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -91,10 +94,57 @@ func New(client *mongo.Client, llm *ollama.LLM) (*AI, error) {
 		filePath: "cmd/connect/training-data/",
 		client:   client,
 		col:      col,
-		llm:      llm,
+		embed:    embed,
+		chat:     chat,
 	}
 
 	return &ai, nil
+}
+
+// CreateAIResponse is a blocking call that sends the prompt to the LLM for a
+// game remark. This should be called by a Goroutine during game play.
+func (ai *AI) CreateAIResponse(feedBack string, blueMarkerCount string, redMarkerCounted string, currentTurnColor string, lastMove int) (string, error) {
+	var prompt string
+
+	var nextTurn = "Red"
+	if currentTurnColor == "Red" {
+		nextTurn = "Blue"
+	}
+
+	switch feedBack {
+	case "Normal-GamePlay":
+		prompt = fmt.Sprintf(promptNormalGamePlayPos, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+		if n := rand.Intn(100); n%2 == 0 {
+			prompt = fmt.Sprintf(promptNormalGamePlayNeg, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+		}
+
+	case "Will-Win":
+		prompt = fmt.Sprintf(promptWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+	case "Won-Game":
+		prompt = fmt.Sprintf(promptWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+	case "Lost-Game":
+		prompt = fmt.Sprintf(promptLostGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+	case "Tie-Game":
+		prompt = fmt.Sprintf(promptTieGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+	default:
+		return "", fmt.Errorf("unknown feedback: %s", feedBack)
+	}
+
+	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	f.WriteString("\n")
+	f.WriteString(fmt.Sprintf("[%s][%s][%s][%s][%d]\n", feedBack, blueMarkerCount, redMarkerCounted, currentTurnColor, lastMove))
+	f.WriteString(prompt)
+	f.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	defer cancel()
+
+	response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000))
+	if err != nil {
+		return "", fmt.Errorf("call: %w", err)
+	}
+
+	return response, nil
 }
 
 // CalculateEmbedding takes a given board data and produces the vector embedding.
@@ -106,7 +156,7 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
 	embData = strings.ReplaceAll(embData, "🔴", "red")
 	embData = strings.ReplaceAll(embData, "🟢", "green")
 
-	embedding, err := ai.llm.CreateEmbedding(ctx, []string{embData})
+	embedding, err := ai.embed.CreateEmbedding(ctx, []string{embData})
 	if err != nil {
 		return nil, fmt.Errorf("create embedding: %w", err)
 	}

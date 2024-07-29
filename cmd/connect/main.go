@@ -47,7 +47,12 @@ func run() error {
 
 	fmt.Println("Connected to Ollama ...")
 
-	llm, err := ollama.New(ollama.WithModel("mxbai-embed-large"))
+	embed, err := ollama.New(ollama.WithModel("mxbai-embed-large"))
+	if err != nil {
+		return fmt.Errorf("ollama: %w", err)
+	}
+
+	chat, err := ollama.New(ollama.WithModel("llama3.1"))
 	if err != nil {
 		return fmt.Errorf("ollama: %w", err)
 	}
@@ -57,7 +62,7 @@ func run() error {
 
 	fmt.Println("Establish AI support ...")
 
-	ai, err := ai.New(client, llm)
+	ai, err := ai.New(client, embed, chat)
 	if err != nil {
 		return fmt.Errorf("new ai: %w", err)
 	}

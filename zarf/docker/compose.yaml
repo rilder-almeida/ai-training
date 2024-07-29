@@ -14,14 +14,14 @@ services:
       - ./db_data/db:/data/db
       - ./db_data/configdb:/data/configdb
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    restart: always
-    ports:
-      - 11434:11434
-    volumes:
-      - ./ollama:/root/.ollama
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama
+  #   restart: always
+  #   ports:
+  #     - 11434:11434
+  #   volumes:
+  #     - ./ollama:/root/.ollama
 
   openwebui:
     image: dyrnq/open-webui:main
@@ -38,6 +38,6 @@ services:
       - ./openwebui:/app/backend/data
 
 volumes:
-  ollama: {}
+  # ollama: {}
   mongodb: {}
   openwebui: {}

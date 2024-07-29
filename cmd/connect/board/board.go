@@ -46,9 +46,19 @@ const (
 	dirRight = "right"
 )
 
+var movesOptions = regexp.MustCompile(`\([0-9|,]*\)`)
+var feedback = regexp.MustCompile(`Feedback: [a-z|A-Z|-]+`)
+var markers = regexp.MustCompile(`Markers: [0-9]+`)
+
 type cell struct {
 	hasPiece bool
 	color    string
+}
+
+type chat struct {
+	choice      int
+	currentTurn string
+	board       ai.SimilarBoard
 }
 
 // Board represents the game board and all its state.
@@ -63,6 +73,7 @@ type Board struct {
 	lastWinnerMsg string
 	lastAIMsg     string
 	gameOver      bool
+	chat          chan chat
 }
 
 // New contructs a game board and renders the board.
@@ -97,7 +108,26 @@ func New(ai *ai.AI) (*Board, error) {
 		style:       style,
 		inputCol:    4,
 		currentTurn: currentTurn,
+		chat:        make(chan chat),
 	}
+
+	go func() {
+		for {
+			chat := <-board.chat
+
+			feedBacks := feedback.FindAllString(chat.board.Text, -1)
+			markers := markers.FindAllString(chat.board.Text, -1)
+
+			feedBack := strings.TrimPrefix(feedBacks[0], "Feedback: ")
+			blueMarkers := strings.TrimPrefix(markers[0], "Markers: ")
+			redMarkers := strings.TrimPrefix(markers[1], "Markers: ")
+
+			response, _ := ai.CreateAIResponse(feedBack, blueMarkers, redMarkers, chat.currentTurn, chat.choice)
+
+			board.lastAIMsg = response
+			board.printAI()
+		}
+	}()
 
 	board.drawInit()
 
@@ -601,7 +631,9 @@ func (b *Board) printAI() {
 
 	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	defer f.Close()
+	f.WriteString("\n")
 	f.WriteString(b.lastAIMsg)
+	f.WriteString("\n")
 
 	scanner := bufio.NewScanner(bytes.NewReader([]byte(b.lastAIMsg)))
 	scanner.Split(bufio.ScanWords)
@@ -701,9 +733,6 @@ func (b *Board) runAISupport(boardData string, display string) {
 	b.pickColumn(boards[0])
 }
 
-var movesOptions = regexp.MustCompile(`\([0-9|,]*\)`)
-var feedback = regexp.MustCompile(`Feedback: [a-z|A-Z|-]+`)
-
 func (b *Board) pickColumn(board ai.SimilarBoard) {
 
 	// Extract data from the Moves section.
@@ -771,6 +800,13 @@ func (b *Board) pickColumn(board ai.SimilarBoard) {
 	b.lastAIMsg = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.Score*100, board.Text)
 	b.printAI()
 
+	// Provide this chat information for LLM processing. If the LLM is
+	// currently busy, we will throw this away.
+	select {
+	case b.chat <- chat{choice: choice, currentTurn: b.currentTurn, board: board}:
+	default:
+	}
+
 	b.inputCol = choice
 
 	// Animate the marker moving across before it falls.
@@ -778,7 +814,6 @@ func (b *Board) pickColumn(board ai.SimilarBoard) {
 	b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
 	b.screen.Show()
 	time.Sleep(250 * time.Millisecond)
-
 }
 
 func conv(v string) int {

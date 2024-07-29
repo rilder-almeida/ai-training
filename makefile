@@ -10,7 +10,24 @@ SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 # db.boards.deleteMany({})
 #
 # db.boards.deleteOne({ board_id: 'e7832ae9-ac71-4408-8e27-38b216390de2' })
+#
 
+# ==============================================================================
+# Production support
+# https://chatty-api-3erkmojm3q-uc.a.run.app/v1/chat/completions
+#
+# {
+#   "model": "gemini-1.5-flash-001",
+#   "messages": [
+#     {
+#       "role": "user",
+#       "content": "What is the capital of spain?"
+#     }
+#   ],
+#   "temperature": 0.5,
+#   "top_p": 0.65,
+#   "stream": false
+# }
 
 # ==============================================================================
 # Games
@@ -56,6 +73,7 @@ example7:
 
 install:
 	brew install mongosh
+	brew install ollama
 
 docker:
 	docker pull mongodb/mongodb-atlas-local
@@ -73,6 +91,12 @@ dev-down:
 
 dev-logs:
 	docker compose logs -n 100
+
+dev-ollama-up:
+	OLLAMA_MODELS="zarf/docker/ollama/models"; ollama serve
+
+dev-ollama-logs:
+	tail -f -n 100 ~/.ollama/logs/server.log
 
 download-data:
 	curl -o zarf/data/example3.gz -X GET http://snap.stanford.edu/data/amazon/productGraph/categoryFiles/reviews_Cell_Phones_and_Accessories_5.json.gz \
