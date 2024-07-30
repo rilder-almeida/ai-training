@@ -787,6 +787,9 @@ func (b *Board) pickColumn(board ai.SimilarBoard) {
 		b.screen.Show()
 		time.Sleep(250 * time.Millisecond)
 
+		b.lastAIMsg = ""
+		b.printAI()
+
 		return
 	}
 
