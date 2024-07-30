@@ -17,4 +17,4 @@ Feedback: Will-Win
 -- Red
 Markers: 7
 Moves: ()
-Feedback: Normal-GamePlay, Blocked-Win, Will-Win, Won-Game, Lost-Game, Tie-Game
+Feedback:

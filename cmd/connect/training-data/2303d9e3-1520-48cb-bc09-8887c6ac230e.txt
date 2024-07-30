@@ -16,5 +16,5 @@ Feedback: Normal-GamePlay
 
 -- Red
 Markers: 11
-Moves: ()
-Feedback: Normal-GamePlay, Blocked-Win, Will-Win, Won-Game, Lost-Game, Tie-Game
+Moves: (1,5,7)
+Feedback: Normal-GamePlay

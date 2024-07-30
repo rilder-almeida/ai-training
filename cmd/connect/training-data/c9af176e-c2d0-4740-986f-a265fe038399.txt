@@ -12,7 +12,7 @@ Turn: Blue or Red
 -- Blue
 Markers: 6
 Moves: (2,6,4)
-Feedback: Normal-GamePlay, Blocked-Win, Will-Win, Won-Game, Lost-Game, Tie-Game
+Feedback: Normal-GamePlay
 
 -- Red
 Markers: 6
