@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -45,11 +44,6 @@ const (
 	dirLeft  = "left"
 	dirRight = "right"
 )
-
-var movesOptions = regexp.MustCompile(`\([0-9|,]*\)`)
-var feedback = regexp.MustCompile(`Feedback: [a-z|A-Z|-]+`)
-var markers = regexp.MustCompile(`Markers: [0-9]+`)
-var winner = regexp.MustCompile(`Winner: [a-z|A-Z]+`)
 
 type cell struct {
 	hasPiece bool
@@ -577,20 +571,33 @@ func (b *Board) showWinner(color string) {
 	b.createAIMessage(b.inputCol, color, boards[0])
 }
 
-func (b *Board) createAIMessage(choice int, currentTurn string, board ai.SimilarBoard) {
-	feedBacks := feedback.FindAllString(board.Text, -1)
-	markers := markers.FindAllString(board.Text, -1)
+func (*Board) parseBoardText(board ai.SimilarBoard) map[string]string {
+	m := make(map[string]string)
+	var prefix string
 
-	feedBack := strings.TrimPrefix(feedBacks[0], "Feedback: ")
-	blueMarkers := strings.TrimPrefix(markers[0], "Markers: ")
-	redMarkers := strings.TrimPrefix(markers[1], "Markers: ")
+	parts := strings.Split(board.Text, "\n")
+	for _, part := range parts {
+		keyValue := strings.Split(part, ":")
+		if len(keyValue) == 1 {
+			prefix = strings.Trim(keyValue[0], "- ") + "-"
+			continue
+		}
+		key := fmt.Sprintf("%s%s", prefix, strings.Trim(keyValue[0], " "))
+		m[key] = strings.Trim(keyValue[1], " ()")
+	}
+
+	return m
+}
+
+func (b *Board) createAIMessage(choice int, currentTurn string, board ai.SimilarBoard) {
+	values := b.parseBoardText(board)
 
 	ch := chat{
 		choice:           choice,
 		currentTurnColor: currentTurn,
-		feedBack:         feedBack,
-		blueMarkerCount:  blueMarkers,
-		redMarkerCounted: redMarkers,
+		feedBack:         values["Red-Feedback"],
+		blueMarkerCount:  values["Blue-Markers"],
+		redMarkerCounted: values["Red-Markers"],
 		lastMove:         b.inputCol,
 	}
 
@@ -768,11 +775,9 @@ func (b *Board) runAISupport(boardData string, display string) {
 
 func (b *Board) pickColumn(board ai.SimilarBoard) {
 
-	// Extract data from the Moves section.
-	moves := movesOptions.FindAllString(board.Text, -1)
-	redMoves := strings.TrimRight(moves[1], ")")
-	redMoves = strings.TrimLeft(redMoves, "(")
-	ns := strings.Split(redMoves, ",")
+	// Extract data from the board text.
+	values := b.parseBoardText(board)
+	ns := strings.Split(values["Red-Moves"], ",")
 
 	// I'm going to assume that after 20 iterations all three potential
 	// choices will be tried as a valid move. If we only have 1, don't
