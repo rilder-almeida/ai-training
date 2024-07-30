@@ -115,7 +115,7 @@ func New(ai *ai.AI) (*Board, error) {
 
 			response, _ := ai.CreateAIResponse(chat.feedBack, chat.blueMarkerCount, chat.redMarkerCounted, chat.currentTurnColor, chat.choice)
 
-			board.lastAIMsg = response
+			board.lastAIMsg = fmt.Sprintf("%s CRLF %s", board.lastAIMsg, response)
 			board.printAI()
 		}
 	}()

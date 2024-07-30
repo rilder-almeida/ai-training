@@ -133,12 +133,6 @@ func (ai *AI) CreateAIResponse(feedBack string, blueMarkerCount string, redMarke
 		return "", fmt.Errorf("unknown feedback: %s", feedBack)
 	}
 
-	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	f.WriteString("\n")
-	f.WriteString(fmt.Sprintf("[%s][%s][%s][%s][%d]\n", feedBack, blueMarkerCount, redMarkerCounted, currentTurnColor, lastMove))
-	f.WriteString(prompt)
-	f.Close()
-
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
