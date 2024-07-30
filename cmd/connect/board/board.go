@@ -775,6 +775,21 @@ func (b *Board) runAISupport(boardData string, display string) {
 
 func (b *Board) pickColumn(board ai.SimilarBoard) {
 
+	// If this is the first move of the game, let's choose a random
+	// column.
+	if b.cells == [cols][rows]cell{} {
+		nBig, _ := rand.Int(rand.Reader, big.NewInt(6))
+		b.inputCol = int(nBig.Int64())
+
+		// Animate the marker moving across before it falls.
+		b.print(padLeft+2+(cellWidth*(3)), padTop-1, " ")
+		b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
+		b.screen.Show()
+		time.Sleep(250 * time.Millisecond)
+
+		return
+	}
+
 	// Extract data from the board text.
 	values := b.parseBoardText(board)
 	ns := strings.Split(values["Red-Moves"], ",")
