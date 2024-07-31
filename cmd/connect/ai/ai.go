@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -161,6 +162,54 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
 	return embedding[0], nil
 }
 
+type PickResponse struct {
+	Column int
+	Reason string
+}
+
+// LLMPick perform a review of the game board and makes a choice.
+func (ai *AI) LLMPick(boardData string) (PickResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	defer cancel()
+
+	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	defer f.Close()
+
+	boardData = strings.ReplaceAll(boardData, "🟢", " . ")
+	boardData = strings.ReplaceAll(boardData, "🔵", " Y ")
+	boardData = strings.ReplaceAll(boardData, "🔴", " R ")
+
+	var grid string
+
+	rows := strings.Split(boardData, "\n")
+
+	for i := 5; i >= 0; i-- {
+		grid = fmt.Sprintf("%s%s\n", grid, rows[i])
+	}
+
+	f.WriteString("GRID\n")
+	f.WriteString(grid)
+	f.WriteString("\n")
+
+	prompt := fmt.Sprintf(promptPick, grid)
+
+	f.WriteString("PROMPT\n")
+	f.WriteString(prompt)
+	f.WriteString("\n")
+
+	response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000))
+	if err != nil {
+		return PickResponse{}, fmt.Errorf("call: %w", err)
+	}
+
+	var pick PickResponse
+	if err := json.Unmarshal([]byte(response), &pick); err != nil {
+		return PickResponse{}, fmt.Errorf("unmarshal: %w", err)
+	}
+
+	return pick, nil
+}
+
 // FindSimilarBoard performs a vector search to find the most similar board.
 func (ai *AI) FindSimilarBoard(boardData string) ([]SimilarBoard, error) {
 	embedding, err := ai.CalculateEmbedding(boardData)
@@ -180,7 +229,7 @@ func (ai *AI) FindSimilarBoard(boardData string) ([]SimilarBoard, error) {
 				"exact":       true,
 				"path":        "embedding",
 				"queryVector": embedding,
-				"limit":       5,
+				"limit":       1,
 			}},
 		},
 		{{

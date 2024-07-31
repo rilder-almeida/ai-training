@@ -1,5 +1,30 @@
 package ai
 
+var promptPick = `System:
+
+Use the following pieces of information to answer the user's question.
+If you don't know the answer, say that you don't know.
+
+Provide the answer in a JSON document using the following document.
+
+{
+    Column: integer,
+    Reason: string
+}
+
+Use the name 'Blue' for the Yellow player in any response.
+
+Question:
+
+Using the rules for the board game Connect 4, what column should the Red
+player drop their disk in to have the best chance to win the game or prevent
+the Yellow player from winning?
+
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+
+%s
+`
+
 // Normal-GamePlay, Blocked-Win, Will-Win, Won-Game, Lost-Game, Tie-Game
 
 var promptRedWonGame = `SYSTEM="""

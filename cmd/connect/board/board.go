@@ -750,9 +750,9 @@ func (b *Board) runAISupport(boardData string, display string) {
 	// Show AI information
 
 	if display == "" {
-		b.lastAIMsg = "- RUNNING AI"
+		b.lastAIMsg = "- RUNNING VECTOR AI"
 	} else {
-		b.lastAIMsg = fmt.Sprintf("- %s CRLF - RUNNING AI", display)
+		b.lastAIMsg = fmt.Sprintf("- %s CRLF - RUNNING VECTOR AI", display)
 	}
 
 	b.printAI()
@@ -770,7 +770,60 @@ func (b *Board) runAISupport(boardData string, display string) {
 	// -------------------------------------------------------------------------
 	// Have the AI pick their next move
 
-	b.pickColumn(boards[0])
+	if boards[0].Score == 1 {
+		b.pickColumn(boards[0])
+		return
+	}
+
+	// -------------------------------------------------------------------------
+	// Use the LLM to Pick
+
+	b.llmPickColumn(boardData, display)
+}
+
+func (b *Board) llmPickColumn(boardData string, display string) {
+	if display == "" {
+		b.lastAIMsg = "- RUNNING LLM AI"
+	} else {
+		b.lastAIMsg = fmt.Sprintf("- %s CRLF - RUNNING LLM AI", display)
+	}
+
+	b.printAI()
+
+	pick, err := b.ai.LLMPick(boardData)
+	if err != nil {
+		b.lastAIMsg = err.Error()
+		b.printAI()
+		return
+	}
+
+	choice := -1
+
+	// Does that column have an open space?
+	if !b.cells[pick.Column-1][0].hasPiece {
+		choice = pick.Column
+	}
+
+	// If we didn't find a valid column, find an open one.
+	if choice == -1 {
+		for i := range 6 {
+			if !b.cells[i][0].hasPiece {
+				choice = i + 1
+				break
+			}
+		}
+	}
+
+	b.lastAIMsg = fmt.Sprintf("CHOICE: %d, CRLF REASON: %s", choice, pick.Reason)
+	b.printAI()
+
+	b.inputCol = choice
+
+	// Animate the marker moving across before it falls.
+	b.print(padLeft+2+(cellWidth*(3)), padTop-1, " ")
+	b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
+	b.screen.Show()
+	time.Sleep(250 * time.Millisecond)
 }
 
 func (b *Board) pickColumn(board ai.SimilarBoard) {
