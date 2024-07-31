@@ -1,6 +1,6 @@
 package ai
 
-var promptPick = `System:
+var promptPick = `SYSTEM="""
 
 Use the following pieces of information to answer the user's question.
 If you don't know the answer, say that you don't know.
@@ -16,23 +16,24 @@ Use the name 'Blue' for the Yellow player in any response and never mention the
 color 'Yellow'.
 
 The user is playing the board game Connect 4 and they will ask you a question
-that will help them make their next move. Use the rules for Connect 4 to help
+so you can help them make their next move. Use the rules for Connect 4 to help
 the user.
-
-Question:
-
-Using the following grid from a game of Connect 4, what column should the Red
-player drop their disk into to have the best chance to win the game or prevent
-the Yellow player from winning?
 
 If you can't find a Column that allows Red to win, or a Column that prevents
 Yellow from winning, choose the Column with the least number of disks.
+"""
 
-Game Board:
-
+GAME_BOARD="""
 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
 
 %s
+"""
+
+QUESTION="""
+Review the GAME_BOARD for a game of Connect 4, what column should the Red
+player drop their disk into to have the best chance to win the game or prevent
+the Yellow player from winning?
+"""
 `
 
 // Normal-GamePlay, Blocked-Win, Will-Win, Won-Game, Lost-Game, Tie-Game
