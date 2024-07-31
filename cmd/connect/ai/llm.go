@@ -152,7 +152,9 @@ by any other name.
 
 Always refer to yourself (Red) as 'I'.
 
-Use the following RESPONSE_CONTEXT and GAME_CONTEXT to help produce your response.
+Use one item from the RESPONSE_CONTEXT and the information from the GAME_CONTEXT to help produce your response.
+
+When you choose one item from the RESPONSE_CONTEXT, change the words but keep the sentiment.
 
 Give me 1 statement and keep the answer short and concise.
 """
