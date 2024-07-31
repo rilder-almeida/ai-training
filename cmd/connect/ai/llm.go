@@ -12,18 +12,23 @@ Provide the answer in a JSON document using the following document.
     Reason: string
 }
 
-Use the name 'Blue' for the Yellow player in any response.
+Use the name 'Blue' for the Yellow player in any response and never mention the
+color 'Yellow'.
+
+The user is playing the board game Connect 4 and they will ask you a question
+that will help them make their next move. Use the rules for Connect 4 to help
+the user.
 
 Question:
 
-Using the rules for the board game Connect 4, what column should the Red
-player drop their disk in to have the best chance to win the game or prevent
+Using the following grid from a game of Connect 4, what column should the Red
+player drop their disk into to have the best chance to win the game or prevent
 the Yellow player from winning?
 
-Prioritize stopping the Yellow player from winning.
+If you can't find a Column that allows Red to win, or a Column that prevents
+Yellow from winning, choose the Column with the least number of disks.
 
-Don't pick Column 4 unless the Red or Yellow player is going to win choosing
-that Column.
+Game Board:
 
 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
 
@@ -116,20 +121,30 @@ by any other name.
 
 Always refer to yourself (Red) as 'I'.
 
-Use the following RESPONSE_CONTEXT and GAME_CONTEXT to help produce your response.
+Randomly choose 1 of the following items in the RESPONSE_CONTEXT to help produce the response.
+
+Use all of the content in the GAME_CONTEXT to help produce the response.
 
 Give me 1 statement and keep the answer short and concise.
 """
 
 RESPONSE_CONTEXT="""
 - You are going to beat the other player (Blue) because You are making great moves.
-- You can never be beat because you are a superior player.
+
+- You can never be beat because you are a better player.
+
 - You are the greatest player to ever play the game.
+
 - You are going to beat the other player (Blue) because they are making bad moves.
+
 - Blue can never beat You because you are a superior player.
+
 - Blue is the worst player to ever play the game.
+
 - Blue can't make any moves that are good enough to beat Your superior mind.
+
 - You are the best player that will never be beat by the other player (Blue) because you are better than them.
+
 - Blue is an inferior player that will always lose no matter what they do.
 """
 

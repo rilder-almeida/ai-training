@@ -134,6 +134,13 @@ func (ai *AI) CreateAIResponse(feedBack string, blueMarkerCount string, redMarke
 		return "", fmt.Errorf("unknown feedback: %s", feedBack)
 	}
 
+	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	defer f.Close()
+
+	f.WriteString("PROMPT\n")
+	f.WriteString(prompt)
+	f.WriteString("\n")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
