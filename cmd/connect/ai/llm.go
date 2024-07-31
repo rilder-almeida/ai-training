@@ -20,6 +20,11 @@ Using the rules for the board game Connect 4, what column should the Red
 player drop their disk in to have the best chance to win the game or prevent
 the Yellow player from winning?
 
+Prioritize stopping the Yellow player from winning.
+
+Don't pick Column 4 unless the Red or Yellow player is going to win choosing
+that Column.
+
 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
 
 %s

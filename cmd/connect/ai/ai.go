@@ -162,6 +162,7 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
 	return embedding[0], nil
 }
 
+// PickResponse provides the LLM's choice for the next move.
 type PickResponse struct {
 	Column int
 	Reason string
@@ -171,9 +172,6 @@ type PickResponse struct {
 func (ai *AI) LLMPick(boardData string) (PickResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
-
-	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	defer f.Close()
 
 	boardData = strings.ReplaceAll(boardData, "🟢", " . ")
 	boardData = strings.ReplaceAll(boardData, "🔵", " Y ")
@@ -187,11 +185,10 @@ func (ai *AI) LLMPick(boardData string) (PickResponse, error) {
 		grid = fmt.Sprintf("%s%s\n", grid, rows[i])
 	}
 
-	f.WriteString("GRID\n")
-	f.WriteString(grid)
-	f.WriteString("\n")
-
 	prompt := fmt.Sprintf(promptPick, grid)
+
+	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	defer f.Close()
 
 	f.WriteString("PROMPT\n")
 	f.WriteString(prompt)

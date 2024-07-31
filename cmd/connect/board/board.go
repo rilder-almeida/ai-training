@@ -50,15 +50,6 @@ type cell struct {
 	color    string
 }
 
-type chat struct {
-	choice           int
-	currentTurnColor string
-	feedBack         string
-	blueMarkerCount  string
-	redMarkerCounted string
-	lastMove         int
-}
-
 // Board represents the game board and all its state.
 type Board struct {
 	ai            *ai.AI
@@ -71,7 +62,6 @@ type Board struct {
 	lastWinnerMsg string
 	lastAIMsg     string
 	gameOver      bool
-	chat          chan chat
 }
 
 // New contructs a game board and renders the board.
@@ -106,19 +96,7 @@ func New(ai *ai.AI) (*Board, error) {
 		style:       style,
 		inputCol:    4,
 		currentTurn: currentTurn,
-		chat:        make(chan chat),
 	}
-
-	go func() {
-		for {
-			chat := <-board.chat
-
-			response, _ := ai.CreateAIResponse(chat.feedBack, chat.blueMarkerCount, chat.redMarkerCounted, chat.currentTurnColor, chat.choice)
-
-			board.lastAIMsg = fmt.Sprintf("%s CRLF %s", board.lastAIMsg, response)
-			board.printAI()
-		}
-	}()
 
 	board.drawInit()
 
@@ -592,19 +570,10 @@ func (*Board) parseBoardText(board ai.SimilarBoard) map[string]string {
 func (b *Board) createAIMessage(choice int, currentTurn string, board ai.SimilarBoard) {
 	values := b.parseBoardText(board)
 
-	ch := chat{
-		choice:           choice,
-		currentTurnColor: currentTurn,
-		feedBack:         values["Red-Feedback"],
-		blueMarkerCount:  values["Blue-Markers"],
-		redMarkerCounted: values["Red-Markers"],
-		lastMove:         b.inputCol,
-	}
+	response, _ := b.ai.CreateAIResponse(values["Red-Feedback"], values["Blue-Markers"], values["Red-Markers"], currentTurn, choice)
 
-	select {
-	case b.chat <- ch:
-	default:
-	}
+	b.lastAIMsg = fmt.Sprintf("%s CRLF %s", b.lastAIMsg, response)
+	b.printAI()
 }
 
 // drawBox draws an empty box on the screen.
