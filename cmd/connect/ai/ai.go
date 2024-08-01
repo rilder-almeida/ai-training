@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -134,13 +135,6 @@ func (ai *AI) CreateAIResponse(feedBack string, blueMarkerCount string, redMarke
 		return "", fmt.Errorf("unknown feedback: %s", feedBack)
 	}
 
-	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	defer f.Close()
-
-	f.WriteString("PROMPT\n")
-	f.WriteString(prompt)
-	f.WriteString("\n")
-
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
@@ -171,45 +165,64 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
 
 // PickResponse provides the LLM's choice for the next move.
 type PickResponse struct {
-	Column int
-	Reason string
+	Column   int
+	Reason   string
+	Attmepts int
 }
 
 // LLMPick perform a review of the game board and makes a choice.
-func (ai *AI) LLMPick(boardData string) (PickResponse, error) {
+func (ai *AI) LLMPick(boardData string, redMoves string) (PickResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
+
+	// We need the board to look as the LLM expects it to look.
+	// It knows about Red and Yellow disks, so Blue will be Yellow.
+	// | . | . | Y | Y | . | . | . |
+	// | . | . | . | R | . | . | . |
+	// | . | . | . | . | . | . | . |
 
 	boardData = strings.ReplaceAll(boardData, "🟢", " . ")
 	boardData = strings.ReplaceAll(boardData, "🔵", " Y ")
 	boardData = strings.ReplaceAll(boardData, "🔴", " R ")
 
-	var grid string
-
 	rows := strings.Split(boardData, "\n")
 
+	// We have to reverse the board so the rows are flipped.
+	var grid string
 	for i := 5; i >= 0; i-- {
-		grid = fmt.Sprintf("%s%s\n", grid, rows[i])
+		grid = fmt.Sprintf("%s%s\n", rows[i], grid)
 	}
 
-	prompt := fmt.Sprintf(promptPick, grid)
-
-	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	defer f.Close()
-
-	f.WriteString("PROMPT\n")
-	f.WriteString(prompt)
-	f.WriteString("\n")
-
-	response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000))
-	if err != nil {
-		return PickResponse{}, fmt.Errorf("call: %w", err)
-	}
+	// Generate the prompt to use to ask the LLM to pick a column.
+	prompt := fmt.Sprintf(promptPick, redMoves, grid)
 
 	var pick PickResponse
-	if err := json.Unmarshal([]byte(response), &pick); err != nil {
-		return PickResponse{}, fmt.Errorf("unmarshal: %w", err)
+
+	// The LLM sometimes doesn't pick a column from the list, so we may
+	// need to tell the LLM it didn't listen and try again.
+	attempts := 1
+	for ; attempts <= 2; attempts++ {
+
+		// Ask the LLM to choose a column from the training data.
+		response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000))
+		if err != nil {
+			return PickResponse{}, fmt.Errorf("call: %w", err)
+		}
+
+		if err := json.Unmarshal([]byte(response), &pick); err != nil {
+			return PickResponse{}, fmt.Errorf("unmarshal: %w", err)
+		}
+
+		// Did the LLM listen and pick a column from the redMoves list?
+		if strings.Contains(redMoves, strconv.Itoa(pick.Column)) {
+			break
+		}
+
+		// Tell the LLM they didn't listen and try again.
+		prompt = fmt.Sprintf(promptPickAgain, prompt, response)
 	}
+
+	pick.Attmepts = attempts
 
 	return pick, nil
 }
@@ -233,7 +246,7 @@ func (ai *AI) FindSimilarBoard(boardData string) ([]SimilarBoard, error) {
 				"exact":       true,
 				"path":        "embedding",
 				"queryVector": embedding,
-				"limit":       1,
+				"limit":       2,
 			}},
 		},
 		{{
@@ -321,7 +334,9 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 	// -------------------------------------------------------------------------
 	// Save a copy of this board and extra information.
 
-	f, _ := os.Create(ai.filePath + uuid.NewString() + ".txt")
+	fileID := uuid.NewString()
+
+	f, _ := os.Create(ai.filePath + fileID + ".txt")
 	defer f.Close()
 
 	template := `%s
@@ -362,7 +377,7 @@ Feedback: Normal-GamePlay, Blocked-Win, Will-Win, Won-Game, Lost-Game, Tie-Game
 		return err.Error()
 	}
 
-	return "NEW TRAINING DATA GENERATED"
+	return fmt.Sprintf("NEW TRAINING DATA GENERATED: %s", fileID)
 }
 
 // ProcessBoardFiles reads the training data directory and saved the AI data needed

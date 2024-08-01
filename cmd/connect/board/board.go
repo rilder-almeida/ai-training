@@ -640,9 +640,7 @@ func (b *Board) printAI() {
 
 	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	defer f.Close()
-	f.WriteString("\n")
-	f.WriteString(b.lastAIMsg)
-	f.WriteString("\n")
+	f.WriteString(strings.ReplaceAll(strings.TrimLeft(b.lastAIMsg, "\n"), "CRLF", "\n"))
 
 	scanner := bufio.NewScanner(bytes.NewReader([]byte(b.lastAIMsg)))
 	scanner.Split(bufio.ScanWords)
@@ -665,6 +663,8 @@ func (b *Board) printAI() {
 }
 
 func (b *Board) saveTrainingData() (string, string) {
+	b.lastAIMsg = ""
+	b.printAI()
 
 	// -------------------------------------------------------------------------
 	// Create a copy of the board.
@@ -721,7 +721,7 @@ func (b *Board) runAISupport(boardData string, display string) {
 	if display == "" {
 		b.lastAIMsg = "- RUNNING VECTOR AI"
 	} else {
-		b.lastAIMsg = fmt.Sprintf("- %s CRLF - RUNNING VECTOR AI", display)
+		b.lastAIMsg = fmt.Sprintf("%s CRLF - RUNNING VECTOR AI", b.lastAIMsg)
 	}
 
 	b.printAI()
@@ -736,30 +736,19 @@ func (b *Board) runAISupport(boardData string, display string) {
 		return
 	}
 
-	// -------------------------------------------------------------------------
-	// Have the AI pick their next move
-
-	if boards[0].Score == 1 {
-		b.pickColumn(boards[0])
-		return
-	}
+	board := boards[0]
 
 	// -------------------------------------------------------------------------
 	// Use the LLM to Pick
 
-	b.llmPickColumn(boardData, display)
-}
+	m := b.parseBoardText(board)
 
-func (b *Board) llmPickColumn(boardData string, display string) {
-	if display == "" {
-		b.lastAIMsg = "- RUNNING LLM AI"
-	} else {
-		b.lastAIMsg = fmt.Sprintf("- %s CRLF - RUNNING LLM AI", display)
-	}
+	numbers := m["Red-Moves"]
 
+	b.lastAIMsg = fmt.Sprintf("%s CRLF - RUNNING LLM AI", b.lastAIMsg)
 	b.printAI()
 
-	pick, err := b.ai.LLMPick(boardData)
+	pick, err := b.ai.LLMPick(boardData, numbers)
 	if err != nil {
 		b.lastAIMsg = err.Error()
 		b.printAI()
@@ -783,102 +772,8 @@ func (b *Board) llmPickColumn(boardData string, display string) {
 		}
 	}
 
-	b.lastAIMsg = fmt.Sprintf("CHOICE: %d, CRLF REASON: %s", choice, pick.Reason)
+	b.lastAIMsg = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d - OPTIONS: (%s) - ATTEMPTS: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, numbers, pick.Attmepts, board.Score*100, pick.Reason)
 	b.printAI()
-
-	b.inputCol = choice
-
-	// Animate the marker moving across before it falls.
-	b.print(padLeft+2+(cellWidth*(3)), padTop-1, " ")
-	b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
-	b.screen.Show()
-	time.Sleep(250 * time.Millisecond)
-}
-
-func (b *Board) pickColumn(board ai.SimilarBoard) {
-
-	// If this is the first move of the game, let's choose a random
-	// column.
-	if b.cells == [cols][rows]cell{} {
-		nBig, _ := rand.Int(rand.Reader, big.NewInt(6))
-		b.inputCol = int(nBig.Int64())
-
-		// Animate the marker moving across before it falls.
-		b.print(padLeft+2+(cellWidth*(3)), padTop-1, " ")
-		b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
-		b.screen.Show()
-		time.Sleep(250 * time.Millisecond)
-
-		b.lastAIMsg = ""
-		b.printAI()
-
-		return
-	}
-
-	// Extract data from the board text.
-	values := b.parseBoardText(board)
-	ns := strings.Split(values["Red-Moves"], ",")
-
-	// I'm going to assume that after 20 iterations all three potential
-	// choices will be tried as a valid move. If we only have 1, don't
-	// waste time.
-	iterate := 20
-	if len(ns) == 1 {
-		iterate = 1
-	}
-
-	choice := -1
-	for range iterate {
-
-		// When 1 choice: 100%
-		// When 2 choices: 70%,30
-		// When 3 choices: 60%,30%,10%
-		choices := make([]int, 10)
-		choices[0] = conv(ns[0])
-		choices[1] = conv(ns[0])
-		choices[2] = conv(ns[0])
-		choices[3] = conv(ns[0])
-		choices[4] = conv(ns[0])
-		choices[5] = conv(ns[0])
-		choices[6] = conv(ns[0])
-		choices[7] = conv(ns[0])
-		choices[8] = conv(ns[0])
-		choices[9] = conv(ns[0])
-		if len(ns) > 1 {
-			choices[6] = conv(ns[1])
-			choices[7] = conv(ns[1])
-			choices[8] = conv(ns[1])
-			choices[9] = conv(ns[1])
-		}
-		if len(ns) > 2 {
-			choices[9] = conv(ns[2])
-		}
-
-		// Randomly pick a choice.
-		nBig, _ := rand.Int(rand.Reader, big.NewInt(10))
-		tryChoice := choices[int(nBig.Int64())]
-
-		// Does that column have an open space?
-		if !b.cells[tryChoice-1][0].hasPiece {
-			choice = tryChoice
-			break
-		}
-	}
-
-	// If we didn't find a valid column, find an open one.
-	if choice == -1 {
-		for i := range 6 {
-			if !b.cells[i][0].hasPiece {
-				choice = i + 1
-				break
-			}
-		}
-	}
-
-	b.lastAIMsg = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.Score*100, board.Text)
-	b.printAI()
-
-	b.createAIMessage(choice, b.currentTurn, board)
 
 	b.inputCol = choice
 
