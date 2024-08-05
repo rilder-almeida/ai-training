@@ -152,10 +152,12 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		grid = fmt.Sprintf("%s\n%s", rows[i], grid)
 	}
 
+	score := fmt.Sprintf("%.2f", board.Score*100)
+
 	// Generate the prompt to use to ask the LLM to pick a column.
 	m := ParseBoardText(board)
 	redMoves := m["Red-Moves"]
-	prompt := fmt.Sprintf(promptPick, redMoves, grid)
+	prompt := fmt.Sprintf(promptPick, redMoves, score, grid)
 
 	var pick PickResponse
 
@@ -173,6 +175,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 			return PickResponse{}, fmt.Errorf("call: %w", err)
 		}
 
+		f.WriteString("Response:\n")
 		f.WriteString(response)
 		f.WriteString("\n")
 
@@ -232,8 +235,6 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 		},
 	}
 
-	// TODO: We only red boards.
-
 	cur, err := ai.col.Aggregate(ctx, pipeline)
 	if err != nil {
 		return SimilarBoard{}, fmt.Errorf("aggregate: %w", err)
@@ -247,7 +248,7 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 
 	for _, board := range boards {
 		m := ParseBoardText(board)
-		if m["Turn"] == "Red" || m["Turn"] == "Blue or Red" {
+		if m["State-Turn"] == "Red" || m["State-Turn"] == "Blue or Red" {
 			return board, nil
 		}
 	}
@@ -258,8 +259,6 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 // CreateAIResponse is a blocking call that sends the prompt to the LLM for a
 // game remark. This should be called by a Goroutine during game play.
 func (ai *AI) CreateAIResponse(board SimilarBoard, currentTurnColor string, lastMove int) (string, error) {
-	var prompt string
-
 	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	defer f.Close()
 
@@ -274,28 +273,37 @@ func (ai *AI) CreateAIResponse(board SimilarBoard, currentTurnColor string, last
 		nextTurn = "Blue"
 	}
 
+	var prompt string
+
 	switch feedBack {
 	case "Normal-GamePlay":
-		prompt = fmt.Sprintf(promptNormalGamePlay, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+		prompt = promptNormalGamePlay
+
 	case "Will-Win":
 		if currentTurnColor == "Red" {
-			prompt = fmt.Sprintf(promptRedWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+			prompt = promptRedWonGame
 		} else {
-			prompt = fmt.Sprintf(promptBlueWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+			prompt = promptBlueWonGame
 		}
+
 	case "Won-Game":
 		if currentTurnColor == "Red" {
-			prompt = fmt.Sprintf(promptRedWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+			prompt = promptRedWonGame
 		} else {
-			prompt = fmt.Sprintf(promptBlueWonGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+			prompt = promptBlueWonGame
 		}
+
 	case "Lost-Game":
-		prompt = fmt.Sprintf(promptLostGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+		prompt = promptLostGame
+
 	case "Tie-Game":
-		prompt = fmt.Sprintf(promptTieGame, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+		prompt = promptTieGame
+
 	default:
 		return "", fmt.Errorf("unknown feedback: %s", feedBack)
 	}
+
+	prompt = fmt.Sprintf(prompt, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
 
 	f.WriteString(prompt)
 	f.WriteString("\n")
@@ -308,6 +316,7 @@ func (ai *AI) CreateAIResponse(board SimilarBoard, currentTurnColor string, last
 		return "", fmt.Errorf("call: %w", err)
 	}
 
+	f.WriteString("Response:\n")
 	f.WriteString(response)
 	f.WriteString("\n------------------\n")
 
