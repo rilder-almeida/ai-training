@@ -149,7 +149,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	// We have to reverse the board so the rows are flipped.
 	var grid string
 	for i := 5; i >= 0; i-- {
-		grid = fmt.Sprintf("%s\n%s", rows[i], grid)
+		grid = fmt.Sprintf("%s%s\n", grid, rows[i])
 	}
 
 	score := fmt.Sprintf("%.2f", board.Score*100)
@@ -177,6 +177,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 
 		f.WriteString("Response:\n")
 		f.WriteString(response)
+		f.WriteString("\n")
 
 		if err := json.Unmarshal([]byte(response), &pick); err != nil {
 			return PickResponse{}, fmt.Errorf("unmarshal: %w", err)
