@@ -9,7 +9,7 @@ SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 #
 # db.boards.deleteMany({})
 #
-# db.boards.deleteOne({ board_id: 'e7832ae9-ac71-4408-8e27-38b216390de2' })
+# db.boards.deleteOne({ board_id: '1f76202b-79a2-4f8e-940b-bc90d29895dc' })
 #
 
 # ==============================================================================

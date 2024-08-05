@@ -152,11 +152,18 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		grid = fmt.Sprintf("%s%s\n", grid, rows[i])
 	}
 
-	score := fmt.Sprintf("%.2f", board.Score*100)
-
-	// Generate the prompt to use to ask the LLM to pick a column.
 	m := ParseBoardText(board)
 	redMoves := m["Red-Moves"]
+
+	score := fmt.Sprintf("%.2f", board.Score*100)
+
+	// Reduce the score so the AI picks any one of these columns.
+	// This happens on an empty board.
+	if redMoves == "1,2,3,4,5,6,7" {
+		score = "25.00"
+	}
+
+	// Generate the prompt to use to ask the LLM to pick a column.
 	prompt := fmt.Sprintf(promptPick, redMoves, score, grid)
 
 	var pick PickResponse
@@ -253,7 +260,7 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 	for _, board := range boards {
 		m := ParseBoardText(board)
 		if m["State-Turn"] == "Red" || m["State-Turn"] == "Blue or Red" {
-			fmt.Fprintf(f, "Similar Board:\n%s\nID:%s\nSCORE: %.2f\n\nText:%s\n", board.Board, board.ID, board.Score, board.Text)
+			fmt.Fprintf(f, "Similar Board:\n%s\nID: %s\nSCORE: %.2f\n\nText:%s\n", board.Board, board.ID, board.Score, board.Text)
 			f.WriteString("------------------\n")
 
 			return board, nil

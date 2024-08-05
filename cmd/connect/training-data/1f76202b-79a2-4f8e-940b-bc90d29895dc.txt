@@ -11,10 +11,10 @@ Turn: Blue or Red
 
 -- Blue
 Markers: 0
-Moves: (4,3,5)
+Moves: (1,2,3,4,5,6,7)
 Feedback: Normal-GamePlay
 
 -- Red
 Markers: 0
-Moves: (4,3,5)
+Moves: (1,2,3,4,5,6,7)
 Feedback: Normal-GamePlay
