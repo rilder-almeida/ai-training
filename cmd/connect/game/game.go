@@ -89,13 +89,11 @@ func (b *Board) AITurn() BoardState {
 	// -------------------------------------------------------------------------
 	// Find a similar boards from the training data
 
-	boards, err := b.ai.FindSimilarBoard(boardData)
+	board, err := b.ai.FindSimilarBoard(boardData)
 	if err != nil {
 		b.gameMessage = err.Error()
 		return b.ToBoardState()
 	}
-
-	board := boards[0]
 
 	// -------------------------------------------------------------------------
 	// Use the LLM to Pick

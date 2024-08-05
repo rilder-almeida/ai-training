@@ -165,13 +165,16 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	for ; attempts <= 2; attempts++ {
 
 		f.WriteString(prompt)
-		f.WriteString("\n------------------\n")
+		f.WriteString("\n")
 
 		// Ask the LLM to choose a column from the training data.
 		response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000))
 		if err != nil {
 			return PickResponse{}, fmt.Errorf("call: %w", err)
 		}
+
+		f.WriteString(response)
+		f.WriteString("\n")
 
 		if err := json.Unmarshal([]byte(response), &pick); err != nil {
 			return PickResponse{}, fmt.Errorf("unmarshal: %w", err)
@@ -186,16 +189,18 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		prompt = fmt.Sprintf(promptPickAgain, prompt, response)
 	}
 
+	f.WriteString("------------------\n")
+
 	pick.Attmepts = attempts
 
 	return pick, nil
 }
 
 // FindSimilarBoard performs a vector search to find the most similar board.
-func (ai *AI) FindSimilarBoard(boardData string) ([]SimilarBoard, error) {
+func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 	embedding, err := ai.CalculateEmbedding(boardData)
 	if err != nil {
-		return nil, err
+		return SimilarBoard{}, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -210,7 +215,7 @@ func (ai *AI) FindSimilarBoard(boardData string) ([]SimilarBoard, error) {
 				"exact":       true,
 				"path":        "embedding",
 				"queryVector": embedding,
-				"limit":       2,
+				"limit":       5,
 			}},
 		},
 		{{
@@ -231,16 +236,23 @@ func (ai *AI) FindSimilarBoard(boardData string) ([]SimilarBoard, error) {
 
 	cur, err := ai.col.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, fmt.Errorf("aggregate: %w", err)
+		return SimilarBoard{}, fmt.Errorf("aggregate: %w", err)
 	}
 	defer cur.Close(ctx)
 
-	var results []SimilarBoard
-	if err := cur.All(ctx, &results); err != nil {
-		return nil, fmt.Errorf("all: %w", err)
+	var boards []SimilarBoard
+	if err := cur.All(ctx, &boards); err != nil {
+		return SimilarBoard{}, fmt.Errorf("all: %w", err)
 	}
 
-	return results, nil
+	for _, board := range boards {
+		m := ParseBoardText(board)
+		if m["Turn"] == "Red" || m["Turn"] == "Blue or Red" {
+			return board, nil
+		}
+	}
+
+	return SimilarBoard{}, errors.New("unable to find Red board")
 }
 
 // CreateAIResponse is a blocking call that sends the prompt to the LLM for a
@@ -286,7 +298,7 @@ func (ai *AI) CreateAIResponse(board SimilarBoard, currentTurnColor string, last
 	}
 
 	f.WriteString(prompt)
-	f.WriteString("\n------------------\n")
+	f.WriteString("\n")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
@@ -295,6 +307,9 @@ func (ai *AI) CreateAIResponse(board SimilarBoard, currentTurnColor string, last
 	if err != nil {
 		return "", fmt.Errorf("call: %w", err)
 	}
+
+	f.WriteString(response)
+	f.WriteString("\n------------------\n")
 
 	return response, nil
 }
