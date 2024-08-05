@@ -147,9 +147,12 @@ func (b *Board) AITurn() BoardState {
 	b.lastMove.Column = choice
 	b.lastMove.Row = row + 1
 
+	// Capture a response by the AI.
+	response, _ := b.ai.CreateAIResponse(board, colorRed, choice)
+
 	// Provide final state for display.
 	m := ai.ParseBoardText(board)
-	b.aiMessage = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d - OPTIONS: (%s) - ATTEMPTS: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, m["Red-Moves"], pick.Attmepts, board.Score*100, pick.Reason)
+	b.aiMessage = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d - OPTIONS: (%s) - ATTEMPTS: %d CRLF SCORE: %.2f%% CRLF %s CRLF CRLF %s", board.ID, choice, m["Red-Moves"], pick.Attmepts, board.Score*100, pick.Reason, response)
 
 	// Check if this move allowed the AI player to win the game.
 	b.checkForWinner(choice, row+1)

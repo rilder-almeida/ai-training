@@ -27,8 +27,10 @@ func (b *Board) pollEvents() chan struct{} {
 		}()
 
 		for {
-			if boardState.LastMove.Color == colorBlue {
-				boardState = b.aiTurn()
+			if !boardState.GameOver {
+				if boardState.LastMove.Color == colorBlue {
+					boardState = b.aiTurn()
+				}
 			}
 
 			event := b.screen.PollEvent()
@@ -62,17 +64,25 @@ func (b *Board) pollEvents() chan struct{} {
 					boardState = b.newGame()
 
 				case rune(' '):
-					boardState = b.userTurn()
+					if !boardState.GameOver {
+						boardState = b.userTurn()
+					}
 				}
 
 			case tcell.KeyLeft:
-				b.movePlayerPiece(boardState, dirLeft)
+				if !boardState.GameOver {
+					b.movePlayerPiece(boardState, dirLeft)
+				}
 
 			case tcell.KeyRight:
-				b.movePlayerPiece(boardState, dirRight)
+				if !boardState.GameOver {
+					b.movePlayerPiece(boardState, dirRight)
+				}
 
 			case tcell.KeyEnter, tcell.KeyDown:
-				boardState = b.userTurn()
+				if !boardState.GameOver {
+					boardState = b.userTurn()
+				}
 			}
 		}
 	}()

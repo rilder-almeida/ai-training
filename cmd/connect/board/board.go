@@ -102,6 +102,23 @@ func (b *Board) Run() chan struct{} {
 
 // =============================================================================
 
+func (b *Board) aiTurn() game.BoardState {
+	b.printAI("RUNNING AI")
+	boardState := b.gameBoard.AITurn()
+	b.dropPiece(boardState)
+	b.appyBoardState(boardState, false)
+
+	return b.gameBoard.ToBoardState()
+}
+
+func (b *Board) userTurn() game.BoardState {
+	boardState := b.gameBoard.UserTurn(b.inputCol)
+	b.dropPiece(boardState)
+	b.appyBoardState(boardState, false)
+
+	return b.gameBoard.ToBoardState()
+}
+
 func (b *Board) newGame() game.BoardState {
 	gameBoard, _ := game.New(b.ai)
 
@@ -166,7 +183,7 @@ func (b *Board) drawEmptyGameBoard() {
 
 	screenWidth, _ := b.screen.Size()
 
-	b.drawBox(boardWidth+3, padTop+1, boardWidth+(screenWidth-boardWidth-2), padTop+3+10)
+	b.drawBox(boardWidth+3, padTop+1, boardWidth+(screenWidth-boardWidth-2), padTop+1+12)
 	b.print(boardWidth+4, padTop+1, " AI PLAYER ")
 }
 
@@ -224,23 +241,6 @@ func (b *Board) appyBoardState(boardState game.BoardState, renderBoard bool) {
 	b.print(12, padTop-1, "Winner "+lastWinnerMsg)
 }
 
-func (b *Board) aiTurn() game.BoardState {
-	b.printAI("RUNNING AI")
-	boardState := b.gameBoard.AITurn()
-	b.dropPiece(boardState)
-	b.appyBoardState(boardState, false)
-
-	return b.gameBoard.ToBoardState()
-}
-
-func (b *Board) userTurn() game.BoardState {
-	boardState := b.gameBoard.UserTurn(b.inputCol)
-	b.dropPiece(boardState)
-	b.appyBoardState(boardState, false)
-
-	return b.gameBoard.ToBoardState()
-}
-
 func (b *Board) dropPieceInColRow(boardState game.BoardState, animate bool) {
 	inputCol := boardState.LastMove.Column
 	inputRow := boardState.LastMove.Row
@@ -291,10 +291,6 @@ func (b *Board) dropPiece(boardState game.BoardState) {
 }
 
 func (b *Board) movePlayerPiece(boardState game.BoardState, direction string) {
-	if boardState.GameOver {
-		return
-	}
-
 	if direction == dirLeft && b.inputCol == 1 {
 		return
 	}
@@ -367,7 +363,7 @@ func (b *Board) printAI(message string) {
 	row := boardWidth + 5
 	col := padTop + 2
 
-	for range 8 {
+	for range 10 {
 		for range actWidth {
 			b.print(row, col, " ")
 			row++
