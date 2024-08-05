@@ -128,11 +128,11 @@ type PickResponse struct {
 
 // LLMPick perform a review of the game board and makes a choice.
 func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
-	defer cancel()
-
 	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	defer f.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	defer cancel()
 
 	// We need the board to look as the LLM expects it to look.
 	// It knows about Red and Yellow disks, so Blue will be Yellow.
@@ -177,7 +177,6 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 
 		f.WriteString("Response:\n")
 		f.WriteString(response)
-		f.WriteString("\n")
 
 		if err := json.Unmarshal([]byte(response), &pick); err != nil {
 			return PickResponse{}, fmt.Errorf("unmarshal: %w", err)
@@ -192,6 +191,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		prompt = fmt.Sprintf(promptPickAgain, prompt, response)
 	}
 
+	fmt.Fprintf(f, "\nAttempts: %d\n", attempts)
 	f.WriteString("------------------\n")
 
 	pick.Attmepts = attempts
@@ -201,6 +201,9 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 
 // FindSimilarBoard performs a vector search to find the most similar board.
 func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
+	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	defer f.Close()
+
 	embedding, err := ai.CalculateEmbedding(boardData)
 	if err != nil {
 		return SimilarBoard{}, err
@@ -249,6 +252,9 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 	for _, board := range boards {
 		m := ParseBoardText(board)
 		if m["State-Turn"] == "Red" || m["State-Turn"] == "Blue or Red" {
+			fmt.Fprintf(f, "Similar Board:\n%s\nID:%s\nSCORE: %.2f\n\nText:%s\n", board.Board, board.ID, board.Score, board.Text)
+			f.WriteString("------------------\n")
+
 			return board, nil
 		}
 	}
