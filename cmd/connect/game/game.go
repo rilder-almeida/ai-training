@@ -145,15 +145,23 @@ func (b *Board) AITurn() BoardState {
 	b.lastMove.Column = choice
 	b.lastMove.Row = row + 1
 
+	// Check if this move allowed the AI player to win the game.
+	b.checkForWinner(choice, row+1)
+
+	var response string
+
 	// Capture a response by the AI.
-	response, _ := b.ai.CreateAIResponse(board, choice)
+	if b.gameOver {
+		boardData, _, _ := b.BoardData()
+		board, _ := b.ai.FindSimilarBoard(boardData)
+		response, _ = b.ai.CreateAIResponse(board, b.lastMove.Column)
+	} else {
+		response, _ = b.ai.CreateAIResponse(board, choice)
+	}
 
 	// Provide final state for display.
 	m := ai.ParseBoardText(board)
 	b.aiMessage = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d - OPTIONS: (%s) - ATTEMPTS: %d CRLF SCORE: %.2f%% CRLF %s CRLF CRLF %s", board.ID, choice, m["Red-Moves"], pick.Attmepts, board.Score*100, pick.Reason, response)
-
-	// Check if this move allowed the AI player to win the game.
-	b.checkForWinner(choice, row+1)
 
 	return b.ToBoardState()
 }
@@ -210,6 +218,13 @@ func (b *Board) UserTurn(column int) BoardState {
 
 	// Check if this move allowed the player to win the game.
 	b.checkForWinner(column+1, row+1)
+
+	// Capture a response by the AI if the game is over.
+	if b.gameOver {
+		boardData, _, _ := b.BoardData()
+		board, _ := b.ai.FindSimilarBoard(boardData)
+		b.aiMessage, _ = b.ai.CreateAIResponse(board, b.lastMove.Column)
+	}
 
 	return b.ToBoardState()
 }
