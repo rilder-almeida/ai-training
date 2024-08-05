@@ -146,7 +146,7 @@ func (b *Board) AITurn() BoardState {
 	b.lastMove.Row = row + 1
 
 	// Capture a response by the AI.
-	response, _ := b.ai.CreateAIResponse(board, colorRed, choice)
+	response, _ := b.ai.CreateAIResponse(board, choice)
 
 	// Provide final state for display.
 	m := ai.ParseBoardText(board)

@@ -258,7 +258,7 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 
 // CreateAIResponse is a blocking call that sends the prompt to the LLM for a
 // game remark. This should be called by a Goroutine during game play.
-func (ai *AI) CreateAIResponse(board SimilarBoard, currentTurnColor string, lastMove int) (string, error) {
+func (ai *AI) CreateAIResponse(board SimilarBoard, lastMove int) (string, error) {
 	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	defer f.Close()
 
@@ -268,11 +268,6 @@ func (ai *AI) CreateAIResponse(board SimilarBoard, currentTurnColor string, last
 	blueMarkerCount := m["Blue-Markers"]
 	redMarkerCounted := m["Red-Markers"]
 
-	var nextTurn = "Red"
-	if currentTurnColor == "Red" {
-		nextTurn = "Blue"
-	}
-
 	var prompt string
 
 	switch feedBack {
@@ -280,18 +275,13 @@ func (ai *AI) CreateAIResponse(board SimilarBoard, currentTurnColor string, last
 		prompt = promptNormalGamePlay
 
 	case "Will-Win":
-		if currentTurnColor == "Red" {
-			prompt = promptRedWonGame
-		} else {
-			prompt = promptBlueWonGame
-		}
+		prompt = promptWonGame
 
 	case "Won-Game":
-		if currentTurnColor == "Red" {
-			prompt = promptRedWonGame
-		} else {
-			prompt = promptBlueWonGame
-		}
+		prompt = promptWonGame
+
+	case "Blocked-Win":
+		prompt = promptBlockedWin
 
 	case "Lost-Game":
 		prompt = promptLostGame
@@ -303,7 +293,7 @@ func (ai *AI) CreateAIResponse(board SimilarBoard, currentTurnColor string, last
 		return "", fmt.Errorf("unknown feedback: %s", feedBack)
 	}
 
-	prompt = fmt.Sprintf(prompt, blueMarkerCount, redMarkerCounted, nextTurn, currentTurnColor, lastMove)
+	prompt = fmt.Sprintf(prompt, blueMarkerCount, redMarkerCounted, lastMove)
 
 	f.WriteString(prompt)
 	f.WriteString("\n")

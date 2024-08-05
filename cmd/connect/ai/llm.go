@@ -73,13 +73,11 @@ Use the following items to help formulate a response.
 Use the following items to add context to the response.
 
 - There are %s Blue pieces and %s Red pieces on the board.
-- The %s player goes next.
-- The %s player just dropped a piece in column %d.
+- The Blue player goes next.
+- The Red player just dropped a piece in column %d.
 `
 
-// Normal-GamePlay, Blocked-Win, Will-Win, Won-Game, Lost-Game, Tie-Game
-
-var promptRedWonGame = `User:
+var promptWonGame = `User:
 You are playing the board game Connect 4 and you need to develop a witty or sarcastic
 response about the game. Use the rules for Connect 4 to help answer the question.
 
@@ -102,37 +100,9 @@ Use the following items to help formulate a response.
 Use the following items to add context to the response.
 
 - There are %s Blue pieces and %s Red pieces on the board.
-- The %s player just lost the game.
+- The Blue player just lost the game.
 - The Red player just won the game.
-- The %s player just dropped a piece in column %d.
-`
-
-var promptBlueWonGame = `User:
-You are playing the board game Connect 4 and you need to develop a witty or sarcastic
-response about the game. Use the rules for Connect 4 to help answer the question.
-
-You are the Red player and the other player is the Blue player.
-
-Say 'You' for the Blue player in any response and never mention the
-color 'Blue'.
-
-Taylor the response so it sounds like it's coming from the user directly.
-
-Always refer to yourself (Red Player) as 'I'.
-
-Provide 1 statement and keep the answer short and concise.
-
-Use the following items to help formulate a response.
-
-- You won the game and beat Blue.
-- In what world did Blue think they could beat you.
-
-Use the following items to add context to the response.
-
-- There are %s Blue pieces and %s Red pieces on the board.
-- The %s player just lost the game.
-- The Blue player just won the game.
-- The %s player just dropped a piece in column %d.
+- The Red player just dropped a piece in column %d.
 `
 
 var promptBlockedWin = `User:
@@ -165,8 +135,8 @@ Use the following items to help formulate a response.
 Use the following items to add context to the response.
 
 - There are %s Blue pieces and %s Red pieces on the board.
-- The %s player goes next.
-- The %s player just dropped a piece in column %d and blocked a win.
+- The Blue player goes next.
+- The Red player just dropped a piece in column %d and blocked a win.
 `
 
 var promptLostGame = `User:
@@ -191,8 +161,8 @@ Use the following items to help formulate a response.
 Use the following items to add context to the response.
 
 - There are %s Blue pieces and %s Red pieces on the board.
-- The %s player just lost the game.
-- The %s player just dropped a piece in column %d and won the game.
+- The Red player just lost the game.
+- The Red player just dropped a piece in column %d and lost the game.
 `
 
 var promptTieGame = `User:
@@ -217,6 +187,6 @@ Use the following items to help formulate a response.
 Use the following items to add context to the response.
 
 - There are %s Blue pieces and %s Red pieces on the board.
-- The %s player just tied the game.
-- The %s player just dropped a piece in column %d and tied the game.
+- The Red and Blue players just tied the game.
+- The Red player just dropped a piece in column %d and tied the game.
 `
