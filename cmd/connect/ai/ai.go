@@ -131,6 +131,9 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
+	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	defer f.Close()
+
 	// We need the board to look as the LLM expects it to look.
 	// It knows about Red and Yellow disks, so Blue will be Yellow.
 	// | . | . | Y | Y | . | . | . |
@@ -146,7 +149,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	// We have to reverse the board so the rows are flipped.
 	var grid string
 	for i := 5; i >= 0; i-- {
-		grid = fmt.Sprintf("%s%s\n", rows[i], grid)
+		grid = fmt.Sprintf("%s\n%s", rows[i], grid)
 	}
 
 	// Generate the prompt to use to ask the LLM to pick a column.
@@ -160,6 +163,9 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	// need to tell the LLM it didn't listen and try again.
 	attempts := 1
 	for ; attempts <= 2; attempts++ {
+
+		f.WriteString(prompt)
+		f.WriteString("\n------------------\n")
 
 		// Ask the LLM to choose a column from the training data.
 		response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000))
@@ -242,6 +248,9 @@ func (ai *AI) FindSimilarBoard(boardData string) ([]SimilarBoard, error) {
 func (ai *AI) CreateAIResponse(board SimilarBoard, currentTurnColor string, lastMove int) (string, error) {
 	var prompt string
 
+	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	defer f.Close()
+
 	m := ParseBoardText(board)
 
 	feedBack := m["Red-Feedback"]
@@ -275,6 +284,9 @@ func (ai *AI) CreateAIResponse(board SimilarBoard, currentTurnColor string, last
 	default:
 		return "", fmt.Errorf("unknown feedback: %s", feedBack)
 	}
+
+	f.WriteString(prompt)
+	f.WriteString("\n------------------\n")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()

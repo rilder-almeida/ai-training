@@ -179,12 +179,12 @@ func (b *Board) drawEmptyGameBoard() {
 	b.print(10, 1, "Connect 4 AI Version")
 	b.print(0, boardHeight+padTop+1, "   ①    ②    ③    ④    ⑤    ⑥    ⑦")
 
-	b.print(boardWidth+3, padTop-1, "<n> new game   <q> quit game   ")
+	b.print(boardWidth+3, padTop-3, "<n> new game   <q> quit game   ")
 
 	screenWidth, _ := b.screen.Size()
 
-	b.drawBox(boardWidth+3, padTop+1, boardWidth+(screenWidth-boardWidth-2), padTop+1+12)
-	b.print(boardWidth+4, padTop+1, " AI PLAYER ")
+	b.drawBox(boardWidth+3, padTop-1, boardWidth+(screenWidth-boardWidth-2), padTop-1+15)
+	b.print(boardWidth+4, padTop-1, " AI PLAYER ")
 }
 
 func (b *Board) appyBoardState(boardState game.BoardState, renderBoard bool) {
@@ -361,9 +361,9 @@ func (b *Board) printAI(message string) {
 	actWidth := (screenWidth - boardWidth - 8)
 
 	row := boardWidth + 5
-	col := padTop + 2
+	col := padTop
 
-	for range 10 {
+	for range 13 {
 		for range actWidth {
 			b.print(row, col, " ")
 			row++
@@ -373,7 +373,7 @@ func (b *Board) printAI(message string) {
 	}
 
 	row = boardWidth + 5
-	col = padTop + 2
+	col = padTop
 
 	scanner := bufio.NewScanner(bytes.NewReader([]byte(message)))
 	scanner.Split(bufio.ScanWords)

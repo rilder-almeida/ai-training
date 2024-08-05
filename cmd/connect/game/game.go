@@ -216,28 +216,6 @@ func (b *Board) UserTurn(column int) BoardState {
 	return b.ToBoardState()
 }
 
-// CreateAIMessage produces an AI message for the opponent.
-func (b *Board) CreateAIMessage(column int, currentTurn string, board ai.SimilarBoard) {
-	b.gameMessage = ""
-	b.aiMessage = ""
-
-	boardData, _, _ := b.BoardData()
-
-	boards, err := b.ai.FindSimilarBoard(boardData)
-	if err != nil {
-		b.gameMessage = err.Error()
-		return
-	}
-
-	response, err := b.ai.CreateAIResponse(boards[0], currentTurn, column)
-	if err != nil {
-		b.gameMessage = err.Error()
-		return
-	}
-
-	b.aiMessage = response
-}
-
 // BoardData converts the game board into a text representation.
 func (b *Board) BoardData() (boardData string, blue int, red int) {
 	var data strings.Builder
@@ -271,7 +249,10 @@ func (b *Board) BoardData() (boardData string, blue int, red int) {
 func (b *Board) checkForWinner(colInput int, rowInput int) bool {
 	defer func() {
 		if b.winner != "" {
-			b.gameMessage = "there is a winner"
+			b.gameMessage = fmt.Sprintf("The %s player has won", b.winner)
+			if b.winner == "Tie Game" {
+				b.gameMessage = "There was a Tie between the Blue and Red player"
+			}
 			b.gameOver = true
 		}
 	}()
