@@ -236,9 +236,9 @@ func (b *Board) UserTurn(column int) BoardState {
 		var err error
 
 		if b.winner == colorRed {
-			b.aiMessage, err = b.ai.CreateAIResponse("Won-Game", blue, red, b.lastMove.Column)
+			response, err = b.ai.CreateAIResponse("Won-Game", blue, red, b.lastMove.Column)
 		} else {
-			b.aiMessage, err = b.ai.CreateAIResponse("Lost-Game", blue, red, b.lastMove.Column)
+			response, err = b.ai.CreateAIResponse("Lost-Game", blue, red, b.lastMove.Column)
 		}
 
 		b.aiMessage = response
@@ -280,7 +280,7 @@ func (b *Board) BoardData() (boardData string, blue int, red int) {
 
 // =============================================================================
 
-func (b *Board) checkForWinner(colInput int, rowInput int) bool {
+func (b *Board) checkForWinner(colInput int, rowInput int) {
 	defer func() {
 		if b.winner != "" {
 			b.gameMessage = fmt.Sprintf("The %s player has won", b.winner)
@@ -319,10 +319,10 @@ func (b *Board) checkForWinner(colInput int, rowInput int) bool {
 		switch {
 		case red == 4:
 			b.winner = colorRed
-			return true
+			return
 		case blue == 4:
 			b.winner = colorBlue
-			return true
+			return
 		}
 	}
 
@@ -351,10 +351,10 @@ func (b *Board) checkForWinner(colInput int, rowInput int) bool {
 		switch {
 		case red == 4:
 			b.winner = colorRed
-			return true
+			return
 		case blue == 4:
 			b.winner = colorBlue
-			return true
+			return
 		}
 	}
 
@@ -393,10 +393,10 @@ func (b *Board) checkForWinner(colInput int, rowInput int) bool {
 		switch {
 		case red == 4:
 			b.winner = colorRed
-			return true
+			return
 		case blue == 4:
 			b.winner = colorBlue
-			return true
+			return
 		}
 
 		useCol++
@@ -438,10 +438,10 @@ func (b *Board) checkForWinner(colInput int, rowInput int) bool {
 		switch {
 		case red == 4:
 			b.winner = colorRed
-			return true
+			return
 		case blue == 4:
 			b.winner = colorBlue
-			return true
+			return
 		}
 
 		useCol--
@@ -462,8 +462,5 @@ stop:
 
 	if tie {
 		b.winner = "Tie Game"
-		return true
 	}
-
-	return false
 }
