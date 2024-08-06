@@ -29,7 +29,8 @@ Use the name 'Blue' for the Yellow player in any response and never mention the
 color 'Yellow'.
 
 Please respond with a single column number from this list [%s]. Choose the
-first number in the list if the score is 100.00 else pick any number from the list.
+first number in the list if the score is 100.00 else randomly pick a number
+from the list.
 
 Here is the score: %s
 

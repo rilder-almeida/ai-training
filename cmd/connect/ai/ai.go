@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -157,9 +158,11 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 
 	score := fmt.Sprintf("%.2f", board.Score*100)
 
-	// Reduce the score so the AI picks any one of these columns.
-	// This happens on an empty board.
+	// Check if Red is starting the game.
+	// We need the AI to randomaly pick a column and it's not good at that.
+	// So we will help it. Pick 3 columns and lower the score.
 	if redMoves == "1,2,3,4,5,6,7" {
+		redMoves = fmt.Sprintf("%d,%d,%d", rand.Intn(7)+1, rand.Intn(7)+1, rand.Intn(7)+1)
 		score = "25.00"
 	}
 

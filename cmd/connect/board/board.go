@@ -105,6 +105,7 @@ func (b *Board) Run() chan struct{} {
 func (b *Board) aiTurn() game.BoardState {
 	b.printAI("RUNNING AI")
 	boardState := b.gameBoard.AITurn()
+	b.printAI("")
 	b.dropPiece(boardState)
 	b.appyBoardState(boardState, false)
 
@@ -210,7 +211,7 @@ func (b *Board) appyBoardState(boardState game.BoardState, renderBoard bool) {
 	}
 
 	if boardState.GameMessage != "" && boardState.AIMessage != "" {
-		b.printAI(boardState.GameMessage + " CRLF " + boardState.AIMessage)
+		b.printAI(boardState.GameMessage + " CRLF CRLF " + boardState.AIMessage)
 	} else if boardState.GameMessage != "" {
 		b.printAI(boardState.GameMessage)
 	} else {
