@@ -105,7 +105,9 @@ func (b *Board) Run() chan struct{} {
 func (b *Board) aiTurn() game.BoardState {
 	b.printAI("RUNNING AI")
 	boardState := b.gameBoard.AITurn()
-	b.printAI("")
+
+	b.printAI("Applying Red Disk")
+
 	b.dropPiece(boardState)
 	b.appyBoardState(boardState, false)
 
@@ -113,7 +115,9 @@ func (b *Board) aiTurn() game.BoardState {
 }
 
 func (b *Board) userTurn() game.BoardState {
+	b.printAI("Applying Blue Disk")
 	boardState := b.gameBoard.UserTurn(b.inputCol)
+
 	b.dropPiece(boardState)
 	b.appyBoardState(boardState, false)
 
