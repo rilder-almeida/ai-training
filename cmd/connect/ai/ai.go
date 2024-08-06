@@ -260,7 +260,7 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 		return SimilarBoard{}, fmt.Errorf("all: %w", err)
 	}
 
-	return boards[0], errors.New("unable to find Red board")
+	return boards[0], nil
 }
 
 // CreateAIResponse produces a game response based on a similar board.

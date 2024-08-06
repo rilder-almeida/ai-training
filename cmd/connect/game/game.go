@@ -70,6 +70,7 @@ func New(ai *ai.AI) (*Board, error) {
 func (b *Board) AITurn() BoardState {
 	b.gameMessage = ""
 	b.aiMessage = ""
+	b.debugMessage = ""
 
 	if b.gameOver {
 		b.gameMessage = "game is over"
@@ -184,6 +185,7 @@ func (b *Board) AITurn() BoardState {
 func (b *Board) UserTurn(column int) BoardState {
 	b.gameMessage = ""
 	b.aiMessage = ""
+	b.debugMessage = ""
 
 	if b.gameOver {
 		b.gameMessage = "game is over"

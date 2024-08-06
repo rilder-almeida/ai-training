@@ -217,9 +217,9 @@ func (b *Board) appyBoardState(boardState game.BoardState, renderBoard bool) {
 	if boardState.GameMessage != "" && boardState.AIMessage != "" {
 		b.printAI(fmt.Sprintf("%s CRLF CRLF %s CRLF CRLF %s", boardState.GameMessage, boardState.AIMessage, boardState.DebugMessage))
 	} else if boardState.GameMessage != "" {
-		b.printAI(boardState.GameMessage)
+		b.printAI(fmt.Sprintf("%s CRLF CRLF %s", boardState.GameMessage, boardState.DebugMessage))
 	} else {
-		b.printAI(boardState.AIMessage)
+		b.printAI(fmt.Sprintf("%s CRLF CRLF %s", boardState.AIMessage, boardState.DebugMessage))
 	}
 
 	if !boardState.GameOver {
