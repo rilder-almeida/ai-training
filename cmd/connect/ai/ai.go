@@ -232,7 +232,7 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 				"exact":       true,
 				"path":        "embedding",
 				"queryVector": embedding,
-				"limit":       5,
+				"limit":       1,
 			}},
 		},
 		{{
@@ -260,17 +260,7 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 		return SimilarBoard{}, fmt.Errorf("all: %w", err)
 	}
 
-	for _, board := range boards {
-		m := ParseBoardText(board)
-		if m["State-Turn"] == "Red" || m["State-Turn"] == "Blue or Red" {
-			fmt.Fprintf(f, "Similar Board:\n%s\nID: %s\nSCORE: %.2f\n\nText:%s\n", board.Board, board.ID, board.Score, board.Text)
-			f.WriteString("------------------\n")
-
-			return board, nil
-		}
-	}
-
-	return SimilarBoard{}, errors.New("unable to find Red board")
+	return boards[0], errors.New("unable to find Red board")
 }
 
 // CreateAIResponse produces a game response based on a similar board.

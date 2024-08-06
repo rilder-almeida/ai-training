@@ -32,13 +32,14 @@ type LastMove struct {
 
 // Board represents the game board and all its state.
 type Board struct {
-	ai          *ai.AI
-	cells       [cols][rows]Cell
-	lastMove    LastMove
-	aiMessage   string
-	gameMessage string
-	gameOver    bool
-	winner      string
+	ai           *ai.AI
+	cells        [cols][rows]Cell
+	lastMove     LastMove
+	aiMessage    string
+	gameMessage  string
+	debugMessage string
+	gameOver     bool
+	winner       string
 }
 
 // New contructs a game board and renders the board.
@@ -170,9 +171,11 @@ func (b *Board) AITurn() BoardState {
 		}
 	}
 
+	b.aiMessage = response
+
 	// Provide final state for display.
 	m := ai.ParseBoardText(board)
-	b.aiMessage = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d - OPTIONS: (%s) - ATTEMPTS: %d CRLF SCORE: %.2f%% CRLF %s CRLF CRLF %s", board.ID, choice, m["Red-Moves"], pick.Attmepts, board.Score*100, pick.Reason, response)
+	b.debugMessage = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d - OPTIONS: (%s) - ATTEMPTS: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, m["Red-Moves"], pick.Attmepts, board.Score*100, pick.Reason)
 
 	return b.ToBoardState()
 }
