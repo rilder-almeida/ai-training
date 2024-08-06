@@ -93,7 +93,8 @@ dev-logs:
 	docker compose logs -n 100
 
 dev-ollama-up:
-	OLLAMA_MODELS="zarf/docker/ollama/models"; ollama serve
+	export OLLAMA_MODELS="zarf/docker/ollama/models" && \
+	ollama serve
 
 dev-ollama-logs:
 	tail -f -n 100 ~/.ollama/logs/server.log
