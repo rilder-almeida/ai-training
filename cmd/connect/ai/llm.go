@@ -72,7 +72,7 @@ Use the following items to help formulate a response.
 
 Use the following items to add context to the response.
 
-- There are %s Blue pieces and %s Red pieces on the board.
+- There are %d Blue pieces and %d Red pieces on the board.
 - The Blue player goes next.
 - The Red player just dropped a piece in column %d.
 `
@@ -99,7 +99,7 @@ Use the following items to help formulate a response.
 
 Use the following items to add context to the response.
 
-- There are %s Blue pieces and %s Red pieces on the board.
+- There are %d Blue pieces and %d Red pieces on the board.
 - The Blue player just lost the game.
 - The Red player just won the game.
 - The Red player just dropped a piece in column %d.
@@ -134,7 +134,7 @@ Use the following items to help formulate a response.
 
 Use the following items to add context to the response.
 
-- There are %s Blue pieces and %s Red pieces on the board.
+- There are %d Blue pieces and %d Red pieces on the board.
 - The Blue player goes next.
 - The Red player just dropped a piece in column %d and blocked a win.
 `
@@ -160,7 +160,7 @@ Use the following items to help formulate a response.
 
 Use the following items to add context to the response.
 
-- There are %s Blue pieces and %s Red pieces on the board.
+- There are %d Blue pieces and %d Red pieces on the board.
 - The Red player just lost the game.
 - The Red player just dropped a piece in column %d and lost the game.
 `
@@ -186,7 +186,7 @@ Use the following items to help formulate a response.
 
 Use the following items to add context to the response.
 
-- There are %s Blue pieces and %s Red pieces on the board.
+- There are %d Blue pieces and %d Red pieces on the board.
 - The Red and Blue players just tied the game.
 - The Red player just dropped a piece in column %d and tied the game.
 `

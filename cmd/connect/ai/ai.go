@@ -270,41 +270,29 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 	return SimilarBoard{}, errors.New("unable to find Red board")
 }
 
-// CreateAIResponse is a blocking call that sends the prompt to the LLM for a
-// game remark. This should be called by a Goroutine during game play.
-func (ai *AI) CreateAIResponse(board SimilarBoard, lastMove int) (string, error) {
+// CreateAIResponse produces a game response based on a similar board.
+func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCounted int, lastMove int) (string, error) {
 	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	defer f.Close()
 
-	m := ParseBoardText(board)
-
-	feedBack := m["Red-Feedback"]
-	blueMarkerCount := m["Blue-Markers"]
-	redMarkerCounted := m["Red-Markers"]
-
-	var prompt string
-
-	switch feedBack {
+	switch prompt {
 	case "Normal-GamePlay":
 		prompt = promptNormalGamePlay
 
 	case "Will-Win":
 		prompt = promptWonGame
 
-	case "Won-Game":
-		prompt = promptWonGame
-
 	case "Blocked-Win":
 		prompt = promptBlockedWin
+
+	case "Won-Game":
+		prompt = promptWonGame
 
 	case "Lost-Game":
 		prompt = promptLostGame
 
-	case "Tie-Game":
-		prompt = promptTieGame
-
 	default:
-		return "", fmt.Errorf("unknown feedback: %s", feedBack)
+		return "", fmt.Errorf("unknown prompt: %s", prompt)
 	}
 
 	prompt = fmt.Sprintf(prompt, blueMarkerCount, redMarkerCounted, lastMove)

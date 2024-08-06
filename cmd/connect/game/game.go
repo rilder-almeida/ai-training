@@ -148,15 +148,26 @@ func (b *Board) AITurn() BoardState {
 	// Check if this move allowed the AI player to win the game.
 	b.checkForWinner(choice, row+1)
 
-	var response string
-
 	// Capture a response by the AI.
-	if b.gameOver {
-		boardData, _, _ := b.BoardData()
-		board, _ := b.ai.FindSimilarBoard(boardData)
-		response, _ = b.ai.CreateAIResponse(board, b.lastMove.Column)
-	} else {
-		response, _ = b.ai.CreateAIResponse(board, choice)
+	var response string
+	switch {
+	case b.gameOver:
+		if b.winner == colorRed {
+			response, err = b.ai.CreateAIResponse("Won-Game", blue, red, choice)
+		} else {
+			response, err = b.ai.CreateAIResponse("Lost-Game", blue, red, choice)
+		}
+
+		if err != nil {
+			b.gameMessage = err.Error()
+		}
+
+	default:
+		m := ai.ParseBoardText(board)
+		response, err = b.ai.CreateAIResponse(m["Red-Feedback"], blue, red, choice)
+		if err != nil {
+			b.gameMessage = err.Error()
+		}
 	}
 
 	// Provide final state for display.
@@ -219,11 +230,21 @@ func (b *Board) UserTurn(column int) BoardState {
 	// Check if this move allowed the player to win the game.
 	b.checkForWinner(column+1, row+1)
 
-	// Capture a response by the AI if the game is over.
+	// Capture a response by the AI.
 	if b.gameOver {
-		boardData, _, _ := b.BoardData()
-		board, _ := b.ai.FindSimilarBoard(boardData)
-		b.aiMessage, _ = b.ai.CreateAIResponse(board, b.lastMove.Column)
+		var response string
+		var err error
+
+		if b.winner == colorRed {
+			b.aiMessage, err = b.ai.CreateAIResponse("Won-Game", blue, red, b.lastMove.Column)
+		} else {
+			b.aiMessage, err = b.ai.CreateAIResponse("Lost-Game", blue, red, b.lastMove.Column)
+		}
+
+		b.aiMessage = response
+		if err != nil {
+			b.gameMessage = err.Error()
+		}
 	}
 
 	return b.ToBoardState()
