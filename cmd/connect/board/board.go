@@ -389,7 +389,7 @@ func (b *Board) printAI(message string) {
 		b.print(row, col, word)
 
 		row += len(word) + 1
-		if row >= boardWidth+actWidth-6 {
+		if row >= boardWidth+actWidth-5 {
 			col++
 			row = boardWidth + 5
 		}
