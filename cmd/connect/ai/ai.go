@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -162,7 +161,6 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	// We need the AI to randomaly pick a column and it's not good at that.
 	// So we will help it. Pick 3 columns and lower the score.
 	if redMoves == "1,2,3,4,5,6,7" {
-		redMoves = fmt.Sprintf("%d,%d,%d", rand.Intn(7)+1, rand.Intn(7)+1, rand.Intn(7)+1)
 		score = "25.00"
 	}
 
@@ -180,7 +178,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		f.WriteString("\n")
 
 		// Ask the LLM to choose a column from the training data.
-		response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000))
+		response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000), llms.WithTemperature(0.8))
 		if err != nil {
 			return PickResponse{}, fmt.Errorf("call: %w", err)
 		}
@@ -188,6 +186,9 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		f.WriteString("Response:\n")
 		f.WriteString(response)
 		f.WriteString("\n")
+
+		// I had a situation where the response was marked with this character.
+		response = strings.Trim(response, "`")
 
 		if err := json.Unmarshal([]byte(response), &pick); err != nil {
 			return PickResponse{}, fmt.Errorf("unmarshal: %w", err)
@@ -296,7 +297,7 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
-	response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000))
+	response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000), llms.WithTemperature(0.8))
 	if err != nil {
 		return "", fmt.Errorf("call: %w", err)
 	}
