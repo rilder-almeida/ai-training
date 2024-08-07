@@ -14,52 +14,48 @@ const (
 	cols = 7
 )
 
-const (
-	colorBlue = "Blue"
-	colorRed  = "Red"
-)
-
-type Cell struct {
-	HasPiece bool
-	Color    string
+type cell struct {
+	hasPiece bool
+	player   Player
 }
 
-type LastMove struct {
-	Column int
-	Row    int
-	Color  string
+type lastMove struct {
+	column int
+	row    int
+	player Player
 }
 
 // Board represents the game board and all its state.
 type Board struct {
 	ai           *ai.AI
-	cells        [cols][rows]Cell
-	lastMove     LastMove
+	cells        [cols][rows]cell
+	lastMove     lastMove
 	aiMessage    string
 	gameMessage  string
 	debugMessage string
 	gameOver     bool
-	winner       string
+	winner       Player
 }
 
-// New contructs a game board and renders the board.
+// New contructs a game board.
 func New(ai *ai.AI) (*Board, error) {
-	currentTurn := colorBlue
+	goingFirst := Players.Blue
+
 	nBig, err := rand.Int(rand.Reader, big.NewInt(100))
 	if err != nil {
 		return nil, fmt.Errorf("random number: %w", err)
 	}
 
 	if n := nBig.Int64(); n%2 == 0 {
-		currentTurn = colorRed
+		goingFirst = Players.Red
 	}
 
 	board := Board{
 		ai: ai,
-		lastMove: LastMove{
-			Column: 4,
-			Row:    0,
-			Color:  currentTurn,
+		lastMove: lastMove{
+			column: 4,
+			row:    0,
+			player: goingFirst,
 		},
 	}
 
@@ -81,11 +77,11 @@ func (b *Board) AITurn() BoardState {
 	// Check if we have a new game board
 
 	boardData, blue, red := b.BoardData()
-	b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner)
+	b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner.name)
 
 	defer func() {
 		boardData, blue, red := b.BoardData()
-		b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner)
+		b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner.name)
 	}()
 
 	// -------------------------------------------------------------------------
@@ -109,14 +105,14 @@ func (b *Board) AITurn() BoardState {
 	choice := -1
 
 	// Does that column have an open space?
-	if !b.cells[pick.Column-1][0].HasPiece {
+	if !b.cells[pick.Column-1][0].hasPiece {
 		choice = pick.Column
 	}
 
 	// If we didn't find a valid column, find an open one.
 	if choice == -1 {
 		for i := range 6 {
-			if !b.cells[i][0].HasPiece {
+			if !b.cells[i][0].hasPiece {
 				choice = i + 1
 				break
 			}
@@ -127,7 +123,7 @@ func (b *Board) AITurn() BoardState {
 	row := -1
 	for i := rows - 1; i >= 0; i-- {
 		cell := b.cells[choice-1][i]
-		if !cell.HasPiece {
+		if !cell.hasPiece {
 			row = i
 			break
 		}
@@ -139,13 +135,13 @@ func (b *Board) AITurn() BoardState {
 	}
 
 	// Set this piece in the cells.
-	b.cells[choice-1][row].HasPiece = true
-	b.cells[choice-1][row].Color = colorRed
+	b.cells[choice-1][row].hasPiece = true
+	b.cells[choice-1][row].player = Players.Red
 
 	// Mark this last move.
-	b.lastMove.Color = colorRed
-	b.lastMove.Column = choice
-	b.lastMove.Row = row + 1
+	b.lastMove.player = Players.Red
+	b.lastMove.column = choice
+	b.lastMove.row = row + 1
 
 	// Check if this move allowed the AI player to win the game.
 	b.checkForWinner(choice, row+1)
@@ -154,7 +150,7 @@ func (b *Board) AITurn() BoardState {
 	var response string
 	switch {
 	case b.gameOver:
-		if b.winner == colorRed {
+		if b.winner == Players.Red {
 			response, err = b.ai.CreateAIResponse("Won-Game", blue, red, choice)
 		} else {
 			response, err = b.ai.CreateAIResponse("Lost-Game", blue, red, choice)
@@ -196,11 +192,11 @@ func (b *Board) UserTurn(column int) BoardState {
 	// Check if we have a new game board
 
 	boardData, blue, red := b.BoardData()
-	b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner)
+	b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner.name)
 
 	defer func() {
 		boardData, blue, red := b.BoardData()
-		b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner)
+		b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner.name)
 	}()
 
 	// -------------------------------------------------------------------------
@@ -212,7 +208,7 @@ func (b *Board) UserTurn(column int) BoardState {
 	row := -1
 	for i := rows - 1; i >= 0; i-- {
 		cell := b.cells[column][i]
-		if !cell.HasPiece {
+		if !cell.hasPiece {
 			row = i
 			break
 		}
@@ -224,13 +220,13 @@ func (b *Board) UserTurn(column int) BoardState {
 	}
 
 	// Set this piece in the cells.
-	b.cells[column][row].HasPiece = true
-	b.cells[column][row].Color = colorBlue
+	b.cells[column][row].hasPiece = true
+	b.cells[column][row].player = Players.Blue
 
 	// Mark this last move.
-	b.lastMove.Color = colorBlue
-	b.lastMove.Column = column + 1
-	b.lastMove.Row = row + 1
+	b.lastMove.player = Players.Blue
+	b.lastMove.column = column + 1
+	b.lastMove.row = row + 1
 
 	// Check if this move allowed the player to win the game.
 	b.checkForWinner(column+1, row+1)
@@ -240,10 +236,10 @@ func (b *Board) UserTurn(column int) BoardState {
 		var response string
 		var err error
 
-		if b.winner == colorRed {
-			response, err = b.ai.CreateAIResponse("Won-Game", blue, red, b.lastMove.Column)
+		if b.winner == Players.Red {
+			response, err = b.ai.CreateAIResponse("Won-Game", blue, red, b.lastMove.column)
 		} else {
-			response, err = b.ai.CreateAIResponse("Lost-Game", blue, red, b.lastMove.Column)
+			response, err = b.ai.CreateAIResponse("Lost-Game", blue, red, b.lastMove.column)
 		}
 
 		b.aiMessage = response
@@ -264,14 +260,14 @@ func (b *Board) BoardData() (boardData string, blue int, red int) {
 		for col := range cols {
 			cell := b.cells[col][row]
 			switch {
-			case !cell.HasPiece:
+			case !cell.hasPiece:
 				data.WriteString("🟢|")
 			default:
-				switch cell.Color {
-				case colorBlue:
+				switch cell.player {
+				case Players.Blue:
 					data.WriteString("🔵|")
 					blue++
-				case colorRed:
+				case Players.Red:
 					data.WriteString("🔴|")
 					red++
 				}
@@ -287,12 +283,11 @@ func (b *Board) BoardData() (boardData string, blue int, red int) {
 
 func (b *Board) checkForWinner(colInput int, rowInput int) {
 	defer func() {
-		if b.winner != "" {
+		if b.gameOver {
 			b.gameMessage = fmt.Sprintf("The %s player has won", b.winner)
-			if b.winner == "Tie Game" {
+			if b.winner.IsZero() {
 				b.gameMessage = "There was a Tie between the Blue and Red player"
 			}
-			b.gameOver = true
 		}
 	}()
 
@@ -306,27 +301,29 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 	var blue int
 
 	for col := 0; col < cols; col++ {
-		if !b.cells[col][rowInput].HasPiece {
+		if !b.cells[col][rowInput].hasPiece {
 			red = 0
 			blue = 0
 			continue
 		}
 
-		switch b.cells[col][rowInput].Color {
-		case colorBlue:
+		switch b.cells[col][rowInput].player {
+		case Players.Blue:
 			blue++
 			red = 0
-		case colorRed:
+		case Players.Red:
 			red++
 			blue = 0
 		}
 
 		switch {
 		case red == 4:
-			b.winner = colorRed
+			b.winner = Players.Red
+			b.gameOver = true
 			return
 		case blue == 4:
-			b.winner = colorBlue
+			b.winner = Players.Blue
+			b.gameOver = true
 			return
 		}
 	}
@@ -338,27 +335,29 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 	blue = 0
 
 	for row := 0; row < rows; row++ {
-		if !b.cells[colInput][row].HasPiece {
+		if !b.cells[colInput][row].hasPiece {
 			red = 0
 			blue = 0
 			continue
 		}
 
-		switch b.cells[colInput][row].Color {
-		case colorBlue:
+		switch b.cells[colInput][row].player {
+		case Players.Blue:
 			blue++
 			red = 0
-		case colorRed:
+		case Players.Red:
 			red++
 			blue = 0
 		}
 
 		switch {
 		case red == 4:
-			b.winner = colorRed
+			b.winner = Players.Red
+			b.gameOver = true
 			return
 		case blue == 4:
-			b.winner = colorBlue
+			b.winner = Players.Blue
+			b.gameOver = true
 			return
 		}
 	}
@@ -378,7 +377,7 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 	}
 
 	for useCol != cols && useRow != rows {
-		if !b.cells[useCol][useRow].HasPiece {
+		if !b.cells[useCol][useRow].hasPiece {
 			useCol++
 			useRow++
 			red = 0
@@ -386,21 +385,23 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 			continue
 		}
 
-		switch b.cells[useCol][useRow].Color {
-		case colorBlue:
+		switch b.cells[useCol][useRow].player {
+		case Players.Blue:
 			blue++
 			red = 0
-		case colorRed:
+		case Players.Red:
 			red++
 			blue = 0
 		}
 
 		switch {
 		case red == 4:
-			b.winner = colorRed
+			b.winner = Players.Red
+			b.gameOver = true
 			return
 		case blue == 4:
-			b.winner = colorBlue
+			b.winner = Players.Blue
+			b.gameOver = true
 			return
 		}
 
@@ -423,7 +424,7 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 	}
 
 	for useCol >= 0 && useRow != rows {
-		if !b.cells[useCol][useRow].HasPiece {
+		if !b.cells[useCol][useRow].hasPiece {
 			useCol--
 			useRow++
 			red = 0
@@ -431,21 +432,23 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 			continue
 		}
 
-		switch b.cells[useCol][useRow].Color {
-		case colorBlue:
+		switch b.cells[useCol][useRow].player {
+		case Players.Blue:
 			blue++
 			red = 0
-		case colorRed:
+		case Players.Red:
 			red++
 			blue = 0
 		}
 
 		switch {
 		case red == 4:
-			b.winner = colorRed
+			b.winner = Players.Red
+			b.gameOver = true
 			return
 		case blue == 4:
-			b.winner = colorBlue
+			b.winner = Players.Blue
+			b.gameOver = true
 			return
 		}
 
@@ -458,7 +461,7 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 stop:
 	for col := range b.cells {
 		for _, cell := range b.cells[col] {
-			if !cell.HasPiece {
+			if !cell.hasPiece {
 				tie = false
 				break stop
 			}
@@ -466,6 +469,6 @@ stop:
 	}
 
 	if tie {
-		b.winner = "Tie Game"
+		b.gameOver = true
 	}
 }

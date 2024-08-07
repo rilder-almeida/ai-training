@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"github.com/ardanlabs/ai-training/cmd/connect/game"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -13,7 +14,7 @@ func (b *Board) pollEvents() chan struct{} {
 
 	boardState := b.gameBoard.ToBoardState()
 
-	if boardState.LastMove.Color == colorBlue {
+	if boardState.LastMove.Player == game.Players.Blue {
 		boardState = b.aiTurn()
 	}
 
@@ -28,7 +29,7 @@ func (b *Board) pollEvents() chan struct{} {
 
 		for {
 			if !boardState.GameOver {
-				if boardState.LastMove.Color == colorBlue {
+				if boardState.LastMove.Player == game.Players.Blue {
 					boardState = b.aiTurn()
 				}
 			}
@@ -52,7 +53,7 @@ func (b *Board) pollEvents() chan struct{} {
 			}
 
 			// Only the blue player can control the piece.
-			if !boardState.GameOver && boardState.LastMove.Color == colorBlue {
+			if !boardState.GameOver && boardState.LastMove.Player == game.Players.Blue {
 				b.screen.Beep()
 				continue
 			}

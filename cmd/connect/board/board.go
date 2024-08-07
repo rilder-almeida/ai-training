@@ -205,7 +205,7 @@ func (b *Board) appyBoardState(boardState game.BoardState, renderBoard bool) {
 					LastMove: game.LastMove{
 						Column: col + 1,
 						Row:    row + 1,
-						Color:  cell.Color,
+						Player: cell.Player,
 					},
 				}
 
@@ -223,8 +223,8 @@ func (b *Board) appyBoardState(boardState game.BoardState, renderBoard bool) {
 	}
 
 	if !boardState.GameOver {
-		switch boardState.LastMove.Color {
-		case colorRed:
+		switch boardState.LastMove.Player {
+		case game.Players.Red:
 			b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔵")
 		default:
 			b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
@@ -235,9 +235,9 @@ func (b *Board) appyBoardState(boardState game.BoardState, renderBoard bool) {
 
 	var lastWinnerMsg string
 	switch boardState.Winner {
-	case colorBlue:
+	case game.Players.Blue:
 		lastWinnerMsg = "Blue (🔵)"
-	case colorRed:
+	case game.Players.Red:
 		lastWinnerMsg = "Red (🔴)"
 	default:
 		lastWinnerMsg = "Tie Game"
@@ -262,10 +262,10 @@ func (b *Board) dropPieceInColRow(boardState game.BoardState, animate bool) {
 
 	// Drop the marker into that row.
 	for r := 1; r <= inputRow; r++ {
-		switch boardState.LastMove.Color {
-		case colorBlue:
+		switch boardState.LastMove.Player {
+		case game.Players.Blue:
 			b.print(column, stopRow, "🔵")
-		case colorRed:
+		case game.Players.Red:
 			b.print(column, stopRow, "🔴")
 		}
 
@@ -284,8 +284,8 @@ func (b *Board) dropPiece(boardState game.BoardState) {
 
 	defer func() {
 		b.inputCol = 4
-		switch boardState.LastMove.Color {
-		case colorRed:
+		switch boardState.LastMove.Player {
+		case game.Players.Red:
 			b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔵")
 		default:
 			b.print(padLeft+2+(cellWidth*(b.inputCol-1)), padTop-1, "🔴")
@@ -325,8 +325,8 @@ func (b *Board) movePlayerPiece(boardState game.BoardState, direction string) {
 		column = column + (cellWidth * (b.inputCol - 1))
 	}
 
-	switch boardState.LastMove.Color {
-	case colorRed:
+	switch boardState.LastMove.Player {
+	case game.Players.Red:
 		b.print(column, padTop-1, "🔵")
 	default:
 		b.print(column, padTop-1, "🔴")
