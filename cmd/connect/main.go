@@ -13,6 +13,15 @@ import (
 	"github.com/tmc/langchaingo/llms/ollama"
 )
 
+/*
+	- Flip training data for red moves
+	- Figure out how to select a response propmt
+	- Produce images for vectorizing data
+	- Try larger Llama3.1 model: llama3.1:405b
+	- Try Gemma model: gemma2:27b
+	- Build out all boards with
+*/
+
 var train bool
 
 func init() {
