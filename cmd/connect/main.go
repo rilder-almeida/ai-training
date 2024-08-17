@@ -80,35 +80,48 @@ func run() error {
 	// -------------------------------------------------------------------------
 	// Train or play the game.
 
-	if train {
-		err := ai.ProcessBoardFiles()
+	switch {
+	case train:
+		return training(ai)
 
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("\nDo you want to delete the change file? (y/n) ")
-
-		question, _ := reader.ReadString('\n')
-		if question != "y" {
-			return err
-		}
-
-		if err := ai.DeleteChangeLog(); err != nil {
-			return err
-		}
-
-		fmt.Println("deleted")
-
-		return err
+	default:
+		return gaming(ai)
 	}
-
-	return game(ai)
 }
 
 // =============================================================================
 
-func game(ai *ai.AI) error {
+func training(ai *ai.AI) error {
 
 	// -------------------------------------------------------------------------
-	// Create the board and initialize the display.
+	// Process any new boards or changes
+
+	err := ai.ProcessBoardFiles()
+
+	// -------------------------------------------------------------------------
+	// Ask to delete the change file
+
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("\nDo you want to delete the change file? (y/n) ")
+
+	question, _ := reader.ReadString('\n')
+	if question[:1] != "y" {
+		return err
+	}
+
+	if err := ai.DeleteChangeLog(); err != nil {
+		return err
+	}
+
+	fmt.Println("deleted")
+
+	return err
+}
+
+func gaming(ai *ai.AI) error {
+
+	// -------------------------------------------------------------------------
+	// Create the board and initialize the display
 
 	board, err := board.New(ai)
 	if err != nil {
@@ -117,7 +130,7 @@ func game(ai *ai.AI) error {
 	defer board.Shutdown()
 
 	// -------------------------------------------------------------------------
-	// Start handling board input.
+	// Start handling board input
 
 	<-board.Run()
 
