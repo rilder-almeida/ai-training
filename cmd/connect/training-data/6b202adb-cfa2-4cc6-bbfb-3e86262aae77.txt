@@ -5,11 +5,9 @@
 |🔴|🔵|🔵|🔴|🔵|🔵|🟢|
 |🔴|🔴|🔵|🔵|🔵|🔴|🔴|
 
--- State
-Winner: None
-
--- Red
-Markers: 12
-Moves: (2)
-Feedback: Blocked-Win
-
+{
+    winner: "None",
+    markers: 12,
+    moves: [2],
+    feedback: "Blocked-Win"
+}

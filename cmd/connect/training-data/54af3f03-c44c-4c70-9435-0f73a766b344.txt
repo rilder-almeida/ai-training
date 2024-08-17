@@ -5,11 +5,9 @@
 |🟢|🟢|🔵|🔴|🔵|🔴|🟢|
 |🟢|🟢|🔴|🔵|🔵|🔵|🔴|
 
--- State
-Winner: Red
-
--- Red
-Markers: 6
-Moves: ()
-Feedback: Won-Game
-
+{
+    winner: "Red",
+    markers: 6,
+    moves: [],
+    feedback: "Won-Game"
+}

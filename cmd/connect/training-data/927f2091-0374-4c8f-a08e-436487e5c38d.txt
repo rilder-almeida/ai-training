@@ -5,11 +5,9 @@
 |🔵|🔴|🔴|🔵|🔵|🔴|🔴|
 |🔴|🔵|🔵|🔴|🔴|🔵|🔵|
 
--- State
-Winner: Tie
-
--- Red
-Markers: 21
-Moves: ()
-Feedback: Tie-Game
-
+{
+    winner: "Tie",
+    markers: 21,
+    moves: [],
+    feedback: "Tie-Game"
+}

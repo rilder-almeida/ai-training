@@ -5,11 +5,9 @@
 |🟢|🟢|🔵|🔴|🔵|🟢|🟢|
 |🟢|🟢|🔴|🔵|🔵|🔴|🟢|
 
--- State
-Winner: None
-
--- Red
-Markers: 5
-Moves: (2,5,6)
-Feedback: Normal-GamePlay
-
+{
+    winner: "None",
+    markers: 5,
+    moves: [2,5,6],
+    feedback: "Normal-GamePlay"
+}

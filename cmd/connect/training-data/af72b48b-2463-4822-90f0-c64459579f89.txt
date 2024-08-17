@@ -5,11 +5,9 @@
 |🔴|🔵|🔴|🔵|🔴|🔵|🔴|
 |🔵|🔴|🔵|🔴|🔵|🔴|🔵|
 
--- State
-Winner: None
-
--- Red
-Markers: 8
-Moves: (1)
-Feedback: Will-Win
-
+{
+    winner: "None",
+    markers: 8,
+    moves: [1],
+    feedback: "Will-Win"
+}
