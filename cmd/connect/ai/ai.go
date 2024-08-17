@@ -225,9 +225,6 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 
 // FindSimilarBoard performs a vector search to find the most similar board.
 func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
-	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	defer f.Close()
-
 	embedding, err := ai.CalculateEmbedding(boardData)
 	if err != nil {
 		return SimilarBoard{}, err
@@ -251,9 +248,14 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 		{{
 			Key: "$project",
 			Value: bson.M{
-				"board_id":  1,
-				"board":     1,
-				"text":      1,
+				"board_id": 1,
+				"board":    1,
+				"meta_data": bson.M{
+					"winner":   1,
+					"markers":  1,
+					"moves":    1,
+					"feedback": 1,
+				},
 				"embedding": 1,
 				"score": bson.M{
 					"$meta": "vectorSearchScore",
@@ -272,6 +274,11 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 	if err := cur.All(ctx, &boards); err != nil {
 		return SimilarBoard{}, fmt.Errorf("all: %w", err)
 	}
+
+	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	defer f.Close()
+
+	fmt.Fprintln(f, "*******> MOVES", boards[0].MetaData.Moves)
 
 	return boards[0], nil
 }
@@ -402,12 +409,12 @@ func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int,
 	winner := "None"
 	if gameOver {
 		winner = lastWinner
-		if lastWinner == "Red" {
+		if lastWinner == "Blue" {
 			feedback = "Will-Win"
-		} else {
-			feedback = "Will-Lose"
 		}
 	}
+
+	// TODO: Check is blocked win. Doing it manually for now.
 
 	m := make([]string, len(moves))
 	for i, v := range moves {
