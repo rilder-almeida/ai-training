@@ -7,14 +7,9 @@
 
 -- State
 Winner: Tie
-Turn:
-
--- Blue
-Markers: 21
-Moves: ()
-Feedback: Tie-Game
 
 -- Red
 Markers: 21
 Moves: ()
 Feedback: Tie-Game
+

@@ -5,15 +5,11 @@
 |🔵|🔴|🔴|🔵|🔵|🔴|🔴|
 |🔴|🔵|🔵|🔴|🔴|🔵|🔵|
 
+-- State
 Winner: None
-Turn: Blue
-
--- Blue
-Markers: 15
-Moves: (4)
-Feedback: Blocked-Win
 
 -- Red
 Markers: 16
 Moves: ()
 Feedback:
+

@@ -5,15 +5,11 @@
 |🔵|🔴|🔴|🔵|🔵|🔴|🔴|
 |🔴|🔵|🔵|🔴|🔴|🔵|🔵|
 
+-- State
 Winner: None
-Turn: Blue
-
--- Blue
-Markers: 19
-Moves: (3)
-Feedback: Normal-GamePlay
 
 -- Red
 Markers: 20
 Moves: ()
 Feedback:
+

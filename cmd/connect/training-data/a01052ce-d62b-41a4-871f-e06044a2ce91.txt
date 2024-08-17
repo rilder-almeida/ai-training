@@ -7,14 +7,9 @@
 
 -- State
 Winner: None
-Turn: Blue or Red
-
--- Blue
-Markers: 5
-Moves: (5,6,4)
-Feedback: Normal-GamePlay
 
 -- Red
 Markers: 5
 Moves: (6,5,4)
 Feedback: Normal-GamePlay
+

@@ -7,14 +7,9 @@
 
 -- State
 Winner: None
-Turn: Blue or Red
-
--- Blue
-Markers: 5
-Moves: (1)
-Feedback: Blocked-Win
 
 -- Red
 Markers: 5
 Moves: (1)
 Feedback: Will-Win
+

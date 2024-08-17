@@ -7,14 +7,9 @@
 
 -- State
 Winner: Red
-Turn:
-
--- Blue
-Markers: 7
-Moves: ()
-Feedback: Lost-Game
 
 -- Red
 Markers: 8
 Moves: ()
 Feedback: Won-Game
+
