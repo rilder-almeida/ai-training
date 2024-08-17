@@ -6,7 +6,7 @@
 |🟢|🟢|🟢|🔴|🔵|🟢|🟢|
 
 {
-    "markers": 2,
-    "moves": [5],
+    "markers": 1,
+    "moves": [3,5],
     "feedback": "Normal-GamePlay"
 }

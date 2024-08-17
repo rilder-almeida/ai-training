@@ -235,6 +235,7 @@ func (b *Board) UserTurn(column int) BoardState {
 	// Save the board before the user's choice was applied with knowledge if they
 	// won the game or not.
 	blocked := b.checkForBlock(column+1, row+1)
+	column++
 	if err := b.ai.SaveBoardData(boardData, blueMarkers, column, b.winner.String(), blocked); err != nil {
 		b.debugMessage = err.Error()
 	}
