@@ -74,6 +74,42 @@ func (b *Board) AITurn() BoardState {
 	}
 
 	// -------------------------------------------------------------------------
+	// Before we find a similar board, let's check blue can't win at this point
+	// because we need to train the game to play some basic defense. We won't
+	// use this in the decision making.
+
+	for choice := 1; choice <= 7; choice++ {
+		row := -1
+		for i := rows - 1; i >= 0; i-- {
+			cell := b.cells[choice-1][i]
+			if !cell.hasPiece {
+				row = i
+				break
+			}
+		}
+
+		if row != -1 {
+			if b.checkForSpecificWinner(choice, row+1, Players.Blue) {
+				boardData, blueMarkers, _ := b.BoardData()
+				b.ai.SaveBoardData(boardData, blueMarkers, choice, b.winner.String(), false)
+
+				// Let's try to train immediately so it can be used.
+
+				l := func(format string, v ...any) {}
+				if err := b.ai.ProcessBoardFiles(l); err != nil {
+					b.debugMessage = err.Error()
+					return b.ToBoardState()
+				}
+
+				if err := b.ai.DeleteChangeLog(); err != nil {
+					b.debugMessage = err.Error()
+					return b.ToBoardState()
+				}
+			}
+		}
+	}
+
+	// -------------------------------------------------------------------------
 	// Find a similar boards from the training data
 
 	boardData, blueMarkers, redMarkers := b.BoardData()
@@ -125,6 +161,9 @@ func (b *Board) AITurn() BoardState {
 		return b.ToBoardState()
 	}
 
+	// -------------------------------------------------------------------------
+	// Play the choice on the board
+
 	// Set this piece in the cells.
 	b.cells[choice-1][row].hasPiece = true
 	b.cells[choice-1][row].player = Players.Red
@@ -136,6 +175,9 @@ func (b *Board) AITurn() BoardState {
 
 	// Check if this move allowed the AI player to win the game.
 	b.checkForWinner(choice, row+1)
+
+	// -------------------------------------------------------------------------
+	// Generate the snarky response
 
 	// Capture a response by the AI.
 	var response string
@@ -215,6 +257,9 @@ func (b *Board) UserTurn(column int) BoardState {
 	// Check if this move allowed the player to win the game.
 	b.checkForWinner(column+1, row+1)
 
+	// -------------------------------------------------------------------------
+	// Generate a win or lost response if applicable
+
 	// Capture a response by the AI.
 	if b.gameOver {
 		var response string
@@ -232,9 +277,12 @@ func (b *Board) UserTurn(column int) BoardState {
 		}
 	}
 
+	// -------------------------------------------------------------------------
+	// Save the board to the training data
+
 	// Save the board before the user's choice was applied with knowledge if they
 	// won the game or not.
-	blocked := b.checkForBlock(column+1, row+1)
+	blocked := b.checkForSpecificWinner(column+1, row+1, Players.Red)
 	column++
 	if err := b.ai.SaveBoardData(boardData, blueMarkers, column, b.winner.String(), blocked); err != nil {
 		b.debugMessage = err.Error()
@@ -283,6 +331,17 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 		}
 	}()
 
+	yes, player := b.checkForAnyWinner(colInput, rowInput)
+	switch {
+	case yes && player.IsZero(): // Tie Game
+		b.gameOver = true
+	case yes:
+		b.winner = player
+		b.gameOver = true
+	}
+}
+
+func (b *Board) checkForAnyWinner(colInput int, rowInput int) (bool, Player) {
 	colInput--
 	rowInput--
 
@@ -310,13 +369,9 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 
 		switch {
 		case red == 4:
-			b.winner = Players.Red
-			b.gameOver = true
-			return
+			return true, Players.Red
 		case blue == 4:
-			b.winner = Players.Blue
-			b.gameOver = true
-			return
+			return true, Players.Blue
 		}
 	}
 
@@ -344,13 +399,9 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 
 		switch {
 		case red == 4:
-			b.winner = Players.Red
-			b.gameOver = true
-			return
+			return true, Players.Red
 		case blue == 4:
-			b.winner = Players.Blue
-			b.gameOver = true
-			return
+			return true, Players.Blue
 		}
 	}
 
@@ -388,13 +439,9 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 
 		switch {
 		case red == 4:
-			b.winner = Players.Red
-			b.gameOver = true
-			return
+			return true, Players.Red
 		case blue == 4:
-			b.winner = Players.Blue
-			b.gameOver = true
-			return
+			return true, Players.Blue
 		}
 
 		useCol++
@@ -435,13 +482,9 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 
 		switch {
 		case red == 4:
-			b.winner = Players.Red
-			b.gameOver = true
-			return
+			return true, Players.Red
 		case blue == 4:
-			b.winner = Players.Blue
-			b.gameOver = true
-			return
+			return true, Players.Blue
 		}
 
 		useCol--
@@ -461,17 +504,21 @@ stop:
 	}
 
 	if tie {
-		b.gameOver = true
+		return true, Player{}
 	}
+
+	return false, Player{}
 }
 
-func (b *Board) checkForBlock(colInput int, rowInput int) bool {
+func (b *Board) checkForSpecificWinner(colInput int, rowInput int, player Player) bool {
 	colInput--
 	rowInput--
 
-	b.cells[colInput][rowInput].player = Players.Red
+	save := b.cells[colInput][rowInput].player
+
+	b.cells[colInput][rowInput].player = player
 	defer func() {
-		b.cells[colInput][rowInput].player = Players.Blue
+		b.cells[colInput][rowInput].player = save
 	}()
 
 	// -------------------------------------------------------------------------

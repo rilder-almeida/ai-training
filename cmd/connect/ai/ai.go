@@ -411,6 +411,11 @@ func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, win
 // ProcessBoardFiles reads the training data and creates all the vector
 // embeddings, storing that inside the vector database.
 func (ai *AI) ProcessBoardFiles(log func(format string, v ...any)) error {
+	log = func(format string, v ...any) {
+		writeLogf(format, v...)
+		log(format, v...)
+	}
+
 	files, err := os.ReadDir(trainingDataPath)
 	if err != nil {
 		return fmt.Errorf("read training data directory: %w", err)
@@ -486,6 +491,11 @@ func (ai *AI) ProcessBoardFiles(log func(format string, v ...any)) error {
 
 // GitUpdate takes new files and changes and pushes them to git.
 func (ai *AI) GitUpdate(log func(format string, v ...any)) error {
+	log = func(format string, v ...any) {
+		writeLogf(format, v...)
+		log(format, v...)
+	}
+
 	out, err := exec.Command("git", "add", "-A").CombinedOutput()
 	if err != nil {
 		return err
