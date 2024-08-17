@@ -102,6 +102,8 @@ func (b *Board) gitUpdate() {
 
 	l := func(format string, v ...any) {}
 	b.ai.GitUpdate(l)
+
+	b.printAI("Running Git CRLF Git Complete")
 }
 
 func (b *Board) trainGame() {
