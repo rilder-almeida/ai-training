@@ -12,6 +12,8 @@ db_data/
 ollama/
 openwebui/
 log.txt
+change_log.txt
+hack/
 
 # Test binary, built with `go test -c`
 *.test

@@ -22,37 +22,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// MetaData represents the metadata that is assoicated with a board.
-type MetaData struct {
-	Markers  int    `json:"markers" bson:"markers"`
-	Moves    []int  `json:"moves" bson:"moves"`
-	Feedback string `json:"feedback" bson:"feedback"`
-}
-
-// Board represents connect 4 board information.
-type Board struct {
-	ID        string    `bson:"board_id"`
-	Board     string    `bson:"board"`
-	MetaData  MetaData  `bson:"meta_data"`
-	Embedding []float32 `bson:"embedding"`
-}
-
-// SimilarBoard represents connect 4 board found in the similarity search.
-type SimilarBoard struct {
-	ID        string    `bson:"board_id"`
-	Board     string    `bson:"board"`
-	MetaData  MetaData  `bson:"meta_data"`
-	Embedding []float32 `bson:"embedding"`
-	Score     float64   `bson:"score"`
-}
+const (
+	trainingDataPath = "cmd/connect/training-data/"
+	logFile          = "log.txt"
+	changeLogFile    = "change_log.txt"
+)
 
 // AI provides support to process connect 4 boards.
 type AI struct {
-	filePath string
-	client   *mongo.Client
-	col      *mongo.Collection
-	embed    *ollama.LLM
-	chat     *ollama.LLM
+	client *mongo.Client
+	col    *mongo.Collection
+	embed  *ollama.LLM
+	chat   *ollama.LLM
 }
 
 // New construct the AI api for use.
@@ -98,20 +79,21 @@ func New(client *mongo.Client, embed *ollama.LLM, chat *ollama.LLM) (*AI, error)
 	// Return the api
 
 	ai := AI{
-		filePath: "cmd/connect/training-data/",
-		client:   client,
-		col:      col,
-		embed:    embed,
-		chat:     chat,
+		client: client,
+		col:    col,
+		embed:  embed,
+		chat:   chat,
 	}
 
 	return &ai, nil
 }
 
-// CalculateEmbedding takes a given board data and produces the vector embedding.
+// CalculateEmbedding takes board data and produces a vector embedding.
 func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	// TODO: We want to accept an image soon!
 
 	embData := strings.ReplaceAll(boardData, "🔵", "blue")
 	embData = strings.ReplaceAll(embData, "🔴", "red")
@@ -125,18 +107,8 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
 	return embedding[0], nil
 }
 
-// PickResponse provides the LLM's choice for the next move.
-type PickResponse struct {
-	Column   int
-	Reason   string
-	Attmepts int
-}
-
 // LLMPick perform a review of the game board and makes a choice.
 func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error) {
-	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	defer f.Close()
-
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
@@ -150,19 +122,19 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	boardData = strings.ReplaceAll(boardData, "🔵", " Y ")
 	boardData = strings.ReplaceAll(boardData, "🔴", " R ")
 
-	rows := strings.Split(boardData, "\n")
-
 	// We have to reverse the board so the rows are flipped.
+	rows := strings.Split(boardData, "\n")
 	var grid string
 	for i := 5; i >= 0; i-- {
 		grid = fmt.Sprintf("%s%s\n", grid, rows[i])
 	}
 
+	// Format the score to a percentage.
 	score := fmt.Sprintf("%.2f", board.Score*100)
 
 	// Check if Red is starting the game.
 	// We need the AI to randomaly pick a column and it's not good at that.
-	// So we will help it. Pick 3 columns and lower the score.
+	// So we will help it by lowering the score.
 	if len(board.MetaData.Moves) == 7 {
 		score = "25.00"
 	}
@@ -176,9 +148,8 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	// need to tell the LLM it didn't listen and try again.
 	attempts := 1
 	for ; attempts <= 2; attempts++ {
-
-		f.WriteString(prompt)
-		f.WriteString("\n")
+		writeLog(prompt)
+		writeLog("\n")
 
 		// Ask the LLM to choose a column from the training data.
 		response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000), llms.WithTemperature(0.8))
@@ -186,13 +157,12 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 			return PickResponse{}, fmt.Errorf("call: %w", err)
 		}
 
-		f.WriteString("Response:\n")
-		f.WriteString(response)
-		f.WriteString("\n")
+		writeLog("Response:")
+		writeLog(response)
+		writeLog("\n")
 
 		// I had a situation where the response was marked with this character.
 		response = strings.Trim(response, "`")
-
 		if err := json.Unmarshal([]byte(response), &pick); err != nil {
 			return PickResponse{}, fmt.Errorf("unmarshal: %w", err)
 		}
@@ -214,8 +184,8 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		prompt = fmt.Sprintf(promptPickAgain, prompt, response)
 	}
 
-	fmt.Fprintf(f, "\nAttempts: %d\n", attempts)
-	f.WriteString("------------------\n")
+	writeLogf("\nAttempts: %d", attempts)
+	writeLog("------------------")
 
 	pick.Attmepts = attempts
 
@@ -273,19 +243,11 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 		return SimilarBoard{}, fmt.Errorf("all: %w", err)
 	}
 
-	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	defer f.Close()
-
-	fmt.Fprintln(f, "*******> MOVES", boards[0].MetaData.Moves)
-
 	return boards[0], nil
 }
 
 // CreateAIResponse produces a game response based on a similar board.
 func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCounted int, lastMove int) (string, error) {
-	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	defer f.Close()
-
 	switch prompt {
 	case "Normal-GamePlay":
 		prompt = promptNormalGamePlay
@@ -308,8 +270,7 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 
 	prompt = fmt.Sprintf(prompt, blueMarkerCount, redMarkerCounted, lastMove)
 
-	f.WriteString(prompt)
-	f.WriteString("\n")
+	writeLog(prompt)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
@@ -319,24 +280,25 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 		return "", fmt.Errorf("call: %w", err)
 	}
 
-	f.WriteString("Response:\n")
-	f.WriteString(response)
-	f.WriteString("\n------------------\n")
+	writeLog("Response:")
+	writeLog(response)
+	writeLog("\n------------------")
 
 	return response, nil
 }
 
 // SaveBoardData knows how to write a board file with the following information.
 func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, winner string, blocked bool) error {
+
+	// In case this will be a new board, this will represent the possible
+	// moves people have made so far when seeing this board configuration.
 	moves := []int{lastMove}
 
 	// -------------------------------------------------------------------------
-	// Check if we have captured this board alread so we can update the
+	// Check if we have captured this board already so we can update the
 	// moves on the board.
 
 	var foundMatch string
-
-	fsys := os.DirFS(ai.filePath)
 
 	// Reverse the board data because we want to pretend the blue player
 	// is playing as red.
@@ -344,6 +306,8 @@ func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, win
 	boardData = strings.ReplaceAll(boardData, "🔴", "🔵")
 	boardData = strings.ReplaceAll(boardData, "R", "🔴")
 
+	// Iterate over every file until we find a match or we looked at
+	// everything.
 	fn := func(fileName string, dirEntry fs.DirEntry, err error) error {
 		if foundMatch != "" {
 			return errors.New("found match")
@@ -358,7 +322,7 @@ func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, win
 		}
 
 		boardID := strings.TrimSuffix(fileName, ".txt")
-		board, err := ai.readBoardDataFromDisk(boardID)
+		board, err := ai.readBoardFromDisk(boardID)
 		if err != nil {
 			return fmt.Errorf("reading key file: %w", err)
 		}
@@ -378,31 +342,24 @@ func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, win
 			if !foundMove {
 				moves = append([]int{lastMove}, board.MetaData.Moves...)
 			}
+
+			return errors.New("found match")
 		}
 
 		return nil
 	}
 
+	fsys := os.DirFS(trainingDataPath)
 	fs.WalkDir(fsys, ".", fn)
 
 	// -------------------------------------------------------------------------
-	// Save a copy of this board and extra information.
+	// Save or update this board.
 
 	fileID := foundMatch
 	if foundMatch == "" {
 		fileID = uuid.NewString()
 	}
 
-	f, _ := os.Create(ai.filePath + fileID + ".txt")
-	defer f.Close()
-
-	template := `%s
-{
-    "markers": %d,
-    "moves": [%s],
-    "feedback": %q
-}
-`
 	feedback := "Normal-GamePlay"
 	switch {
 	case winner != "" && winner == "Blue":
@@ -416,20 +373,47 @@ func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, win
 		m[i] = fmt.Sprintf("%d", v)
 	}
 
-	_, err := fmt.Fprintf(f, template, boardData, blueMarkers, strings.Join(m, ","), feedback)
+	f, err := os.Create(trainingDataPath + fileID + ".txt")
+	if err != nil {
+		return fmt.Errorf("create training data: %w", err)
+	}
+	defer f.Close()
+
+	template := `%s
+{
+    "markers": %d,
+    "moves": [%s],
+    "feedback": %q
+}
+`
+
+	_, err = fmt.Fprintf(f,
+		template,
+		boardData,
+		blueMarkers,
+		strings.Join(m, ","),
+		feedback)
+
 	if err != nil {
 		return err
 	}
 
+	writeChangeLog(fileID)
+
 	return nil
 }
 
-// ProcessBoardFiles reads the training data directory and saved the AI data needed
-// for the AI to play connect 4.
+// ProcessBoardFiles reads the training data and creates all the vector
+// embeddings, storing that inside the vector database.
 func (ai *AI) ProcessBoardFiles() error {
-	files, err := os.ReadDir(ai.filePath)
+	files, err := os.ReadDir(trainingDataPath)
 	if err != nil {
-		return fmt.Errorf("read directory: %w", err)
+		return fmt.Errorf("read training data directory: %w", err)
+	}
+
+	changeFile, err := os.ReadDir(changeLogFile)
+	if err != nil {
+		fmt.Print("no change file present")
 	}
 
 	var count int
@@ -445,8 +429,19 @@ func (ai *AI) ProcessBoardFiles() error {
 
 		boardID := strings.TrimSuffix(file.Name(), ".txt")
 
-		if _, err := ai.findBoard(ctx, boardID); err == nil {
-			continue
+		if _, err := ai.findBoardInDB(ctx, boardID); err == nil {
+			if changeFile == nil {
+				continue
+			}
+
+			// Does this board show up in the change file?
+			for _, dir := range changeFile {
+				if dir.Name() != boardID {
+					continue
+				}
+			}
+
+			// We will save a new version of the board.
 		}
 
 		fmt.Println("-------------------------------------------")
@@ -454,7 +449,7 @@ func (ai *AI) ProcessBoardFiles() error {
 
 		fmt.Printf("Creating board: %s\n", boardID)
 
-		board, err := ai.readBoardDataFromDisk(boardID)
+		board, err := ai.readBoardFromDisk(boardID)
 		if err != nil {
 			return fmt.Errorf("new board: %s: %w", boardID, err)
 		}
@@ -469,7 +464,7 @@ func (ai *AI) ProcessBoardFiles() error {
 		fmt.Printf("Saving board data: %s\n", boardID)
 
 		if err := ai.saveBoard(ctx, board); err != nil {
-			return fmt.Errorf("saving board: %s: %w", boardID, err)
+			return fmt.Errorf("save board: %s: %w", boardID, err)
 		}
 	}
 
@@ -480,7 +475,7 @@ func (ai *AI) ProcessBoardFiles() error {
 
 // =============================================================================
 
-func (ai *AI) findBoard(ctx context.Context, boardID string) (Board, error) {
+func (ai *AI) findBoardInDB(ctx context.Context, boardID string) (Board, error) {
 	filter := bson.D{{Key: "board_id", Value: boardID}}
 	res := ai.col.FindOne(ctx, filter)
 	if res.Err() != nil {
@@ -495,8 +490,8 @@ func (ai *AI) findBoard(ctx context.Context, boardID string) (Board, error) {
 	return b, nil
 }
 
-func (ai *AI) readBoardDataFromDisk(boardID string) (Board, error) {
-	fileName := fmt.Sprintf("%s%s.txt", ai.filePath, boardID)
+func (ai *AI) readBoardFromDisk(boardID string) (Board, error) {
+	fileName := fmt.Sprintf("%s%s.txt", trainingDataPath, boardID)
 
 	f, err := os.Open(fileName)
 	if err != nil {
@@ -562,6 +557,8 @@ func (ai *AI) createEmbedding(board Board) (Board, error) {
 }
 
 func (ai *AI) saveBoard(ctx context.Context, board Board) error {
+	filter := bson.D{{Key: "board_id", Value: board.ID}}
+
 	d := Board{
 		ID:        board.ID,
 		Board:     board.Board,
@@ -569,7 +566,8 @@ func (ai *AI) saveBoard(ctx context.Context, board Board) error {
 		Embedding: board.Embedding,
 	}
 
-	if _, err := ai.col.InsertOne(ctx, d); err != nil {
+	var uo options.UpdateOptions
+	if _, err := ai.col.UpdateOne(ctx, filter, d, uo.SetUpsert(true)); err != nil {
 		return fmt.Errorf("insert: %w", err)
 	}
 
