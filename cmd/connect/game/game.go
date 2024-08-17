@@ -178,12 +178,10 @@ func (b *Board) UserTurn(column int) BoardState {
 	}
 
 	// -------------------------------------------------------------------------
-	// Check if we have a new game board
+	// Capture the current state of the board before the player's choice
+	// is applied.
 
 	boardData, blueMarkers, redMarkers := b.BoardData()
-	if err := b.ai.SaveBoardData(boardData, b.winner.name, redMarkers, column, b.gameOver); err != nil {
-		b.debugMessage = err.Error()
-	}
 
 	// -------------------------------------------------------------------------
 	// Apply the user's column choice
@@ -232,6 +230,13 @@ func (b *Board) UserTurn(column int) BoardState {
 		if err != nil {
 			b.gameMessage = err.Error()
 		}
+	}
+
+	// Save the board before the user's choice was applied with knowledge if they
+	// won the game or not.
+	blocked := b.checkForBlock(column+1, row+1)
+	if err := b.ai.SaveBoardData(boardData, blueMarkers, column, b.winner.String(), blocked); err != nil {
+		b.debugMessage = err.Error()
 	}
 
 	return b.ToBoardState()
@@ -457,4 +462,122 @@ stop:
 	if tie {
 		b.gameOver = true
 	}
+}
+
+func (b *Board) checkForBlock(colInput int, rowInput int) bool {
+	colInput--
+	rowInput--
+
+	b.cells[colInput][rowInput].player = Players.Red
+	defer func() {
+		b.cells[colInput][rowInput].player = Players.Blue
+	}()
+
+	// -------------------------------------------------------------------------
+	// Does Red win in the specified row.
+
+	var red int
+
+	for col := 0; col < cols; col++ {
+		if !b.cells[col][rowInput].hasPiece {
+			red = 0
+			continue
+		}
+
+		if b.cells[col][rowInput].player == Players.Red {
+			red++
+		}
+
+		if red == 4 {
+			return true
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Does Red win in the specified column.
+
+	red = 0
+
+	for row := 0; row < rows; row++ {
+		if !b.cells[colInput][row].hasPiece {
+			red = 0
+			continue
+		}
+
+		if b.cells[colInput][row].player == Players.Red {
+			red++
+		}
+
+		if red == 4 {
+			return true
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Does Red win in the NW to SE line.
+
+	red = 0
+
+	// Walk up in a diagonal until we hit column 0.
+	useRow := rowInput
+	useCol := colInput
+	for useCol != 0 && useRow != 0 {
+		useRow--
+		useCol--
+	}
+
+	for useCol != cols && useRow != rows {
+		if !b.cells[useCol][useRow].hasPiece {
+			useCol++
+			useRow++
+			red = 0
+			continue
+		}
+
+		if b.cells[useCol][useRow].player == Players.Red {
+			red++
+		}
+
+		if red == 4 {
+			return true
+		}
+
+		useCol++
+		useRow++
+	}
+
+	// -------------------------------------------------------------------------
+	// Is there a winner in the SW to NE line.
+
+	red = 0
+
+	// Walk up in a diagonal until we hit column 0.
+	useRow = rowInput
+	useCol = colInput
+	for useCol != cols-1 && useRow != 0 {
+		useRow--
+		useCol++
+	}
+
+	for useCol >= 0 && useRow != rows {
+		if !b.cells[useCol][useRow].hasPiece {
+			useCol--
+			useRow++
+			red = 0
+			continue
+		}
+
+		if b.cells[useCol][useRow].player == Players.Red {
+			red++
+		}
+
+		if red == 4 {
+			return true
+		}
+
+		useCol--
+		useRow++
+	}
+
+	return false
 }

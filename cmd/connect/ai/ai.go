@@ -327,7 +327,7 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 }
 
 // SaveBoardData knows how to write a board file with the following information.
-func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int, lastMove int, gameOver bool) error {
+func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, winner string, blocked bool) error {
 	moves := []int{lastMove}
 
 	// -------------------------------------------------------------------------
@@ -364,6 +364,7 @@ func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int,
 		}
 
 		if strings.Compare(boardData, board.Board) == 0 {
+			moves = board.MetaData.Moves
 			foundMatch = boardID
 
 			var foundMove bool
@@ -375,7 +376,7 @@ func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int,
 			}
 
 			if !foundMove {
-				moves = append(moves, board.MetaData.Moves...)
+				moves = append([]int{lastMove}, board.MetaData.Moves...)
 			}
 		}
 
@@ -403,20 +404,19 @@ func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int,
 }
 `
 	feedback := "Normal-GamePlay"
-	if gameOver {
-		if lastWinner == "Blue" {
-			feedback = "Will-Win"
-		}
+	switch {
+	case winner != "" && winner == "Blue":
+		feedback = "Will-Win"
+	case blocked:
+		feedback = "Block-Win"
 	}
-
-	// TODO: Check is blocked win. Doing it manually for now.
 
 	m := make([]string, len(moves))
 	for i, v := range moves {
 		m[i] = fmt.Sprintf("%d", v)
 	}
 
-	_, err := fmt.Fprintf(f, template, boardData, redMarkers, strings.Join(m, ","), feedback)
+	_, err := fmt.Fprintf(f, template, boardData, blueMarkers, strings.Join(m, ","), feedback)
 	if err != nil {
 		return err
 	}
