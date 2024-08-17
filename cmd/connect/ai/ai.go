@@ -10,7 +10,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -23,11 +22,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// MetaData represents the metadata that is assoicated with a board.
+type MetaData struct {
+	Winner   string `json:"winner" bson:"winner"`
+	Markers  int    `json:"markers" bson:"markers"`
+	Moves    []int  `json:"moves" bson:"moves"`
+	Feedback string `json:"feedback" bson:"feedback"`
+}
+
 // Board represents connect 4 board information.
 type Board struct {
 	ID        string    `bson:"board_id"`
 	Board     string    `bson:"board"`
-	Text      string    `bson:"text"`
+	MetaData  MetaData  `bson:"meta_data"`
 	Embedding []float32 `bson:"embedding"`
 }
 
@@ -35,7 +42,7 @@ type Board struct {
 type SimilarBoard struct {
 	ID        string    `bson:"board_id"`
 	Board     string    `bson:"board"`
-	Text      string    `bson:"text"`
+	MetaData  MetaData  `bson:"meta_data"`
 	Embedding []float32 `bson:"embedding"`
 	Score     float64   `bson:"score"`
 }
@@ -152,20 +159,17 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		grid = fmt.Sprintf("%s%s\n", grid, rows[i])
 	}
 
-	m := ParseBoardText(board)
-	redMoves := m["Red-Moves"]
-
 	score := fmt.Sprintf("%.2f", board.Score*100)
 
 	// Check if Red is starting the game.
 	// We need the AI to randomaly pick a column and it's not good at that.
 	// So we will help it. Pick 3 columns and lower the score.
-	if redMoves == "1,2,3,4,5,6,7" {
+	if len(board.MetaData.Moves) == 7 {
 		score = "25.00"
 	}
 
 	// Generate the prompt to use to ask the LLM to pick a column.
-	prompt := fmt.Sprintf(promptPick, redMoves, score, grid)
+	prompt := fmt.Sprintf(promptPick, board.MetaData.Moves, score, grid)
 
 	var pick PickResponse
 
@@ -195,7 +199,15 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		}
 
 		// Did the LLM listen and pick a column from the redMoves list?
-		if strings.Contains(redMoves, strconv.Itoa(pick.Column)) {
+		var found bool
+		for _, v := range board.MetaData.Moves {
+			if v == pick.Column {
+				found = true
+				break
+			}
+		}
+
+		if found {
 			break
 		}
 
@@ -310,7 +322,7 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 }
 
 // SaveBoardData knows how to write a board file with the following information.
-func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, lastWinner string) error {
+func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int, lastMove int, gameOver bool) error {
 
 	// -------------------------------------------------------------------------
 	// Check if we have captured this board alread.
@@ -339,7 +351,14 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			board.WriteString(scanner.Text())
+
+			// Reverse the board as if Red just played to get the intelligence
+			// from the blue player.
+			v := strings.ReplaceAll(scanner.Text(), "🔵", "R")
+			v = strings.ReplaceAll(v, "🔴", "🔵")
+			v = strings.ReplaceAll(v, "R", "🔴")
+
+			board.WriteString(v)
 			board.WriteString("\n")
 
 			lineCount++
@@ -372,39 +391,28 @@ func (ai *AI) SaveBoardData(boardData string, blue int, red int, gameOver bool, 
 	defer f.Close()
 
 	template := `%s
--- State
-Winner: %s
-Turn: %s
 
--- Blue
-Markers: %d
-Moves: ()
-Feedback: Normal-GamePlay, Blocked-Win, Will-Win, Won-Game, Lost-Game, Tie-Game
-
--- Red
-Markers: %d
-Moves: ()
-Feedback: Normal-GamePlay, Blocked-Win, Will-Win, Won-Game, Lost-Game, Tie-Game
+{
+    winner: %q,
+    markers: %d,
+    moves: %v,
+    feedback: %q
+}
 `
-
+	feedback := "Normal-GamePlay"
 	winner := "None"
-	var turn string
-
-	switch gameOver {
-	case true:
+	if gameOver {
 		winner = lastWinner
-	default:
-		switch {
-		case blue > red:
-			turn = "Red"
-		case red > blue:
-			turn = "Blue"
-		case red == blue:
-			turn = "Blue or Red"
+		if lastWinner == "Red" {
+			feedback = "Will-Win"
+		} else {
+			feedback = "Will-Lose"
 		}
 	}
 
-	_, err := fmt.Fprintf(f, template, boardData, winner, turn, blue, red)
+	moves := []int{lastMove}
+
+	_, err := fmt.Fprintf(f, template, boardData, winner, redMarkers, moves, feedback)
 	if err != nil {
 		return err
 	}
@@ -445,28 +453,23 @@ func (ai *AI) ProcessBoardFiles() error {
 
 		fmt.Printf("Creating board: %s\n", boardID)
 
-		board, err := ai.newBoard(boardID)
+		_, err := ai.newBoard(boardID)
 		if err != nil {
 			return fmt.Errorf("new board: %s: %w", boardID, err)
 		}
 
-		if !strings.Contains(board.Text, "Turn: Red") && !strings.Contains(board.Text, "Turn: Blue or Red") {
-			fmt.Printf("Blue Turn Only Board: %s\n", boardID)
-			continue
-		}
+		// fmt.Printf("Create board embedding: %s\n", boardID)
 
-		fmt.Printf("Create board embedding: %s\n", boardID)
+		// board, err = ai.createEmbedding(board)
+		// if err != nil {
+		// 	return fmt.Errorf("create embedding: %s: %w", boardID, err)
+		// }
 
-		board, err = ai.createEmbedding(board)
-		if err != nil {
-			return fmt.Errorf("create embedding: %s: %w", boardID, err)
-		}
+		// fmt.Printf("Saving board data: %s\n", boardID)
 
-		fmt.Printf("Saving board data: %s\n", boardID)
-
-		if err := ai.saveBoard(ctx, board); err != nil {
-			return fmt.Errorf("saving board: %s: %w", boardID, err)
-		}
+		// if err := ai.saveBoard(ctx, board); err != nil {
+		// 	return fmt.Errorf("saving board: %s: %w", boardID, err)
+		// }
 	}
 
 	return nil
@@ -504,7 +507,7 @@ func (ai *AI) newBoard(boardID string) (Board, error) {
 	}
 
 	var board strings.Builder
-	var text strings.Builder
+	var md strings.Builder
 	var lineCount int
 
 	scanner := bufio.NewScanner(bytes.NewReader(data))
@@ -518,17 +521,30 @@ func (ai *AI) newBoard(boardID string) (Board, error) {
 			continue
 		}
 
-		// Capture the game board content.
-		text.WriteString(scanner.Text())
-		text.WriteString("\n")
+		// Remove the extra CRLF.
+		if lineCount == 7 {
+			continue
+		}
+
+		// Capture the game board metadata.
+		md.WriteString(scanner.Text())
+		md.WriteString("\n")
 	}
 
 	boardData := board.String()
 
+	var metaData MetaData
+	if err := json.Unmarshal([]byte(md.String()), &metaData); err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(md.String())
+	fmt.Println(metaData)
+
 	b := Board{
-		ID:    boardID,
-		Board: boardData,
-		Text:  text.String(),
+		ID:       boardID,
+		Board:    boardData,
+		MetaData: metaData,
 	}
 
 	return b, nil
@@ -549,7 +565,7 @@ func (ai *AI) saveBoard(ctx context.Context, board Board) error {
 	d := Board{
 		ID:        board.ID,
 		Board:     board.Board,
-		Text:      board.Text,
+		MetaData:  board.MetaData,
 		Embedding: board.Embedding,
 	}
 

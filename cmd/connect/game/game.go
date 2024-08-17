@@ -74,18 +74,9 @@ func (b *Board) AITurn() BoardState {
 	}
 
 	// -------------------------------------------------------------------------
-	// Check if we have a new game board
-
-	boardData, blue, red := b.BoardData()
-	b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner.name)
-
-	defer func() {
-		boardData, blue, red := b.BoardData()
-		b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner.name)
-	}()
-
-	// -------------------------------------------------------------------------
 	// Find a similar boards from the training data
+
+	boardData, blueMarkers, redMarkers := b.BoardData()
 
 	board, err := b.ai.FindSimilarBoard(boardData)
 	if err != nil {
@@ -151,9 +142,9 @@ func (b *Board) AITurn() BoardState {
 	switch {
 	case b.gameOver:
 		if b.winner == Players.Red {
-			response, err = b.ai.CreateAIResponse("Won-Game", blue, red, choice)
+			response, err = b.ai.CreateAIResponse("Won-Game", blueMarkers, redMarkers, choice)
 		} else {
-			response, err = b.ai.CreateAIResponse("Lost-Game", blue, red, choice)
+			response, err = b.ai.CreateAIResponse("Lost-Game", blueMarkers, redMarkers, choice)
 		}
 
 		if err != nil {
@@ -161,8 +152,7 @@ func (b *Board) AITurn() BoardState {
 		}
 
 	default:
-		m := ai.ParseBoardText(board)
-		response, err = b.ai.CreateAIResponse(m["Red-Feedback"], blue, red, choice)
+		response, err = b.ai.CreateAIResponse(board.MetaData.Feedback, blueMarkers, redMarkers, choice)
 		if err != nil {
 			b.gameMessage = err.Error()
 		}
@@ -171,8 +161,7 @@ func (b *Board) AITurn() BoardState {
 	b.aiMessage = response
 
 	// Provide final state for display.
-	m := ai.ParseBoardText(board)
-	b.debugMessage = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d - OPTIONS: (%s) - ATTEMPTS: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, m["Red-Moves"], pick.Attmepts, board.Score*100, pick.Reason)
+	b.debugMessage = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d - OPTIONS: %v - ATTEMPTS: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.MetaData.Moves, pick.Attmepts, board.Score*100, pick.Reason)
 
 	return b.ToBoardState()
 }
@@ -191,12 +180,12 @@ func (b *Board) UserTurn(column int) BoardState {
 	// -------------------------------------------------------------------------
 	// Check if we have a new game board
 
-	boardData, blue, red := b.BoardData()
-	b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner.name)
+	boardData, blueMarkers, redMarkers := b.BoardData()
+	b.ai.SaveBoardData(boardData, b.winner.name, redMarkers, column, b.gameOver)
 
 	defer func() {
-		boardData, blue, red := b.BoardData()
-		b.ai.SaveBoardData(boardData, blue, red, b.gameOver, b.winner.name)
+		boardData, _, redMarkers := b.BoardData()
+		b.ai.SaveBoardData(boardData, b.winner.name, redMarkers, column, b.gameOver)
 	}()
 
 	// -------------------------------------------------------------------------
@@ -237,9 +226,9 @@ func (b *Board) UserTurn(column int) BoardState {
 		var err error
 
 		if b.winner == Players.Red {
-			response, err = b.ai.CreateAIResponse("Won-Game", blue, red, b.lastMove.column)
+			response, err = b.ai.CreateAIResponse("Won-Game", blueMarkers, redMarkers, b.lastMove.column)
 		} else {
-			response, err = b.ai.CreateAIResponse("Lost-Game", blue, red, b.lastMove.column)
+			response, err = b.ai.CreateAIResponse("Lost-Game", blueMarkers, redMarkers, b.lastMove.column)
 		}
 
 		b.aiMessage = response

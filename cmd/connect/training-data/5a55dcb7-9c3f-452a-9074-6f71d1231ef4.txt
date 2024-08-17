@@ -6,8 +6,8 @@
 |🔴|🔴|🔴|🔵|🔵|🔵|🔴|
 
 {
-    winner: "Blue",
-    markers: 14,
-    moves: [],
-    feedback: "Lost-Game"
+    "winner": "Blue",
+    "markers": 14,
+    "moves": [],
+    "feedback": "Lost-Game"
 }

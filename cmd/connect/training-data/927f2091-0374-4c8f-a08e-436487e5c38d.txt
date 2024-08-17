@@ -6,8 +6,8 @@
 |🔴|🔵|🔵|🔴|🔴|🔵|🔵|
 
 {
-    winner: "Tie",
-    markers: 21,
-    moves: [],
-    feedback: "Tie-Game"
+    "winner": "Tie",
+    "markers": 21,
+    "moves": [],
+    "feedback": "Tie-Game"
 }

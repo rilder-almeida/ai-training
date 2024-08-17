@@ -6,8 +6,8 @@
 |🔵|🔵|🔴|🔴|🔴|🟢|🔵|
 
 {
-    winner: "Red",
-    markers: 8,
-    moves: [],
-    feedback: "Won-Game"
+    "winner": "Red",
+    "markers": 8,
+    "moves": [],
+    "feedback": "Won-Game"
 }

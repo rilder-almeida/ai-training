@@ -6,8 +6,8 @@
 |🟢|🔴|🔴|🔵|🔵|🔵|🔴|
 
 {
-    winner: "None",
-    markers: 7,
-    moves: [2,7,3],
-    feedback: "Normal-GamePlay"
+    "winner": "None",
+    "markers": 7,
+    "moves": [2,7,3],
+    "feedback": "Normal-GamePlay"
 }

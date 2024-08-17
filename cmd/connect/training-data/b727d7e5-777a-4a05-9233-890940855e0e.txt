@@ -6,8 +6,8 @@
 |🟢|🔵|🔵|🔴|🔵|🔵|🟢|
 
 {
-    winner: "None",
-    markers: 5,
-    moves: [2,6],
-    feedback: "Will-Win"
+    "winner": "None",
+    "markers": 5,
+    "moves": [2,6],
+    "feedback": "Will-Win"
 }

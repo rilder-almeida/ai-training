@@ -6,8 +6,8 @@
 |🔵|🔴|🔵|🔵|🔵|🔴|🟢|
 
 {
-    winner: "None",
-    markers: 9,
-    moves: [4],
-    feedback: "Blocked-Win"
+    "winner": "None",
+    "markers": 9,
+    "moves": [4],
+    "feedback": "Blocked-Win"
 }
