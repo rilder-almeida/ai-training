@@ -139,8 +139,14 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		score = "25.00"
 	}
 
+	// We need the list of possible moves.
+	m := make([]string, len(board.MetaData.Moves))
+	for i, v := range board.MetaData.Moves {
+		m[i] = fmt.Sprintf("%d", v)
+	}
+
 	// Generate the prompt to use to ask the LLM to pick a column.
-	prompt := fmt.Sprintf(promptPick, board.MetaData.Moves, score, grid)
+	prompt := fmt.Sprintf(promptPick, strings.Join(m, ","), score, grid)
 
 	var pick PickResponse
 
@@ -149,7 +155,6 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	attempts := 1
 	for ; attempts <= 2; attempts++ {
 		writeLog(prompt)
-		writeLog("\n")
 
 		// Ask the LLM to choose a column from the training data.
 		response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000), llms.WithTemperature(0.8))
@@ -159,7 +164,6 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 
 		writeLog("Response:")
 		writeLog(response)
-		writeLog("\n")
 
 		// I had a situation where the response was marked with this character.
 		response = strings.Trim(response, "`")
