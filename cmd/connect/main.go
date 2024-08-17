@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/ardanlabs/ai-training/cmd/connect/ai"
@@ -79,7 +81,23 @@ func run() error {
 	// Train or play the game.
 
 	if train {
-		return ai.ProcessBoardFiles()
+		err := ai.ProcessBoardFiles()
+
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("\nDo you want to delete the change file? (y/n) ")
+
+		question, _ := reader.ReadString('\n')
+		if question != "y" {
+			return err
+		}
+
+		if err := ai.DeleteChangeLog(); err != nil {
+			return err
+		}
+
+		fmt.Println("deleted")
+
+		return err
 	}
 
 	return game(ai)
