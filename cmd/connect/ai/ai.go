@@ -408,7 +408,7 @@ func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, win
 	case winner != "" && winner == "Blue":
 		feedback = "Will-Win"
 	case blocked:
-		feedback = "Block-Win"
+		feedback = "Blocked-Win"
 	}
 
 	m := make([]string, len(moves))
