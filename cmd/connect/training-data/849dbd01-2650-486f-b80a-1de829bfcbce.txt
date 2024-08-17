@@ -8,6 +8,6 @@
 {
     "winner": "None",
     "markers": 8,
-    "moves": [6,5,,7],
+    "moves": [6,5,7],
     "feedback": "Normal-GamePlay"
 }

@@ -11,6 +11,7 @@ SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 #
 # db.boards.deleteOne({ board_id: '1f76202b-79a2-4f8e-940b-bc90d29895dc' })
 #
+# db.boards.find({board_id: "fdb01ef2-42ec-4f75-918e-63197434927d"})
 
 # ==============================================================================
 # Production support

@@ -298,7 +298,7 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 		prompt = promptLostGame
 
 	default:
-		return "", fmt.Errorf("unknown prompt: %s", prompt)
+		prompt = promptNormalGamePlay
 	}
 
 	prompt = fmt.Sprintf(prompt, blueMarkerCount, redMarkerCounted, lastMove)
@@ -323,16 +323,24 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 
 // SaveBoardData knows how to write a board file with the following information.
 func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int, lastMove int, gameOver bool) error {
+	moves := []int{lastMove}
 
 	// -------------------------------------------------------------------------
-	// Check if we have captured this board alread.
+	// Check if we have captured this board alread so we can update the
+	// moves on the board.
 
-	var foundMatch bool
+	var foundMatch string
 
 	fsys := os.DirFS(ai.filePath)
 
+	// Reverse the board data because we want to pretend the blue player
+	// is playing as red.
+	boardData = strings.ReplaceAll(boardData, "🔵", "R")
+	boardData = strings.ReplaceAll(boardData, "🔴", "🔵")
+	boardData = strings.ReplaceAll(boardData, "R", "🔴")
+
 	fn := func(fileName string, dirEntry fs.DirEntry, err error) error {
-		if foundMatch {
+		if foundMatch != "" {
 			return errors.New("found match")
 		}
 
@@ -340,37 +348,30 @@ func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int,
 			return fmt.Errorf("walkdir failure: %w", err)
 		}
 
-		file, err := fsys.Open(fileName)
+		if fileName == "." {
+			return nil
+		}
+
+		boardID := strings.TrimSuffix(fileName, ".txt")
+		board, err := ai.readBoardDataFromDisk(boardID)
 		if err != nil {
-			return fmt.Errorf("opening key file: %w", err)
+			return fmt.Errorf("reading key file: %w", err)
 		}
-		defer file.Close()
 
-		var board strings.Builder
-		var lineCount int
+		if strings.Compare(boardData, board.Board) == 0 {
+			foundMatch = boardID
 
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-
-			// Reverse the board as if Red just played to get the intelligence
-			// from the blue player.
-			v := strings.ReplaceAll(scanner.Text(), "🔵", "R")
-			v = strings.ReplaceAll(v, "🔴", "🔵")
-			v = strings.ReplaceAll(v, "R", "🔴")
-
-			board.WriteString(v)
-			board.WriteString("\n")
-
-			lineCount++
-
-			// Capture just the game board.
-			if lineCount == 6 {
-				break
+			var foundMove bool
+			for _, v := range board.MetaData.Moves {
+				if v == lastMove {
+					foundMove = true
+					break
+				}
 			}
-		}
 
-		if strings.Compare(boardData, board.String()) == 0 {
-			foundMatch = true
+			if !foundMove {
+				moves = append(moves, board.MetaData.Moves...)
+			}
 		}
 
 		return nil
@@ -378,25 +379,23 @@ func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int,
 
 	fs.WalkDir(fsys, ".", fn)
 
-	if foundMatch {
-		return nil
-	}
-
 	// -------------------------------------------------------------------------
 	// Save a copy of this board and extra information.
 
-	fileID := uuid.NewString()
+	fileID := foundMatch
+	if foundMatch == "" {
+		fileID = uuid.NewString()
+	}
 
 	f, _ := os.Create(ai.filePath + fileID + ".txt")
 	defer f.Close()
 
 	template := `%s
-
 {
-    winner: %q,
-    markers: %d,
-    moves: %v,
-    feedback: %q
+    "winner": %q,
+    "markers": %d,
+    "moves": [%s],
+    "feedback": %q
 }
 `
 	feedback := "Normal-GamePlay"
@@ -410,9 +409,12 @@ func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int,
 		}
 	}
 
-	moves := []int{lastMove}
+	m := make([]string, len(moves))
+	for i, v := range moves {
+		m[i] = fmt.Sprintf("%d", v)
+	}
 
-	_, err := fmt.Fprintf(f, template, boardData, winner, redMarkers, moves, feedback)
+	_, err := fmt.Fprintf(f, template, boardData, winner, redMarkers, strings.Join(m, ","), feedback)
 	if err != nil {
 		return err
 	}
@@ -437,40 +439,39 @@ func (ai *AI) ProcessBoardFiles() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 
-		fmt.Println("-------------------------------------------")
-
 		count++
-		fmt.Printf("Processing file %d of %d\n", count, total)
 
 		boardID := strings.TrimSuffix(file.Name(), ".txt")
 
-		fmt.Printf("Checking if board exists in DB: %s\n", boardID)
-
 		if _, err := ai.findBoard(ctx, boardID); err == nil {
-			fmt.Printf("Board EXISTS in DB: %s\n", boardID)
 			continue
 		}
 
+		fmt.Println("-------------------------------------------")
+		fmt.Printf("Processing file %d of %d\n", count, total)
+
 		fmt.Printf("Creating board: %s\n", boardID)
 
-		_, err := ai.newBoard(boardID)
+		board, err := ai.readBoardDataFromDisk(boardID)
 		if err != nil {
 			return fmt.Errorf("new board: %s: %w", boardID, err)
 		}
 
-		// fmt.Printf("Create board embedding: %s\n", boardID)
+		fmt.Printf("Create board embedding: %s\n", boardID)
 
-		// board, err = ai.createEmbedding(board)
-		// if err != nil {
-		// 	return fmt.Errorf("create embedding: %s: %w", boardID, err)
-		// }
+		board, err = ai.createEmbedding(board)
+		if err != nil {
+			return fmt.Errorf("create embedding: %s: %w", boardID, err)
+		}
 
-		// fmt.Printf("Saving board data: %s\n", boardID)
+		fmt.Printf("Saving board data: %s\n", boardID)
 
-		// if err := ai.saveBoard(ctx, board); err != nil {
-		// 	return fmt.Errorf("saving board: %s: %w", boardID, err)
-		// }
+		if err := ai.saveBoard(ctx, board); err != nil {
+			return fmt.Errorf("saving board: %s: %w", boardID, err)
+		}
 	}
+
+	fmt.Printf("Processing file %d of %d\n", count, total)
 
 	return nil
 }
@@ -492,7 +493,7 @@ func (ai *AI) findBoard(ctx context.Context, boardID string) (Board, error) {
 	return b, nil
 }
 
-func (ai *AI) newBoard(boardID string) (Board, error) {
+func (ai *AI) readBoardDataFromDisk(boardID string) (Board, error) {
 	fileName := fmt.Sprintf("%s%s.txt", ai.filePath, boardID)
 
 	f, err := os.Open(fileName)
@@ -535,11 +536,8 @@ func (ai *AI) newBoard(boardID string) (Board, error) {
 
 	var metaData MetaData
 	if err := json.Unmarshal([]byte(md.String()), &metaData); err != nil {
-		fmt.Println(err)
+		return Board{}, err
 	}
-
-	fmt.Println(md.String())
-	fmt.Println(metaData)
 
 	b := Board{
 		ID:       boardID,

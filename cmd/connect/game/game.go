@@ -181,12 +181,9 @@ func (b *Board) UserTurn(column int) BoardState {
 	// Check if we have a new game board
 
 	boardData, blueMarkers, redMarkers := b.BoardData()
-	b.ai.SaveBoardData(boardData, b.winner.name, redMarkers, column, b.gameOver)
-
-	defer func() {
-		boardData, _, redMarkers := b.BoardData()
-		b.ai.SaveBoardData(boardData, b.winner.name, redMarkers, column, b.gameOver)
-	}()
+	if err := b.ai.SaveBoardData(boardData, b.winner.name, redMarkers, column, b.gameOver); err != nil {
+		b.debugMessage = err.Error()
+	}
 
 	// -------------------------------------------------------------------------
 	// Apply the user's column choice
