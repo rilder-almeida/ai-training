@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -479,6 +480,32 @@ func (ai *AI) ProcessBoardFiles(log func(format string, v ...any)) error {
 	}
 
 	log("Processing file %d of %d\n", count, total)
+
+	return nil
+}
+
+// GitUpdate takes new files and changes and pushes them to git.
+func (ai *AI) GitUpdate(log func(format string, v ...any)) error {
+	out, err := exec.Command("git", "add", "-A").CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	log(string(out))
+
+	out, err = exec.Command("git", "commit", "-m", "save game data").CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	log(string(out))
+
+	out, err = exec.Command("git", "push").CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	log(string(out))
 
 	return nil
 }

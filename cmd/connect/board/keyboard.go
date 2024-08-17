@@ -64,6 +64,9 @@ func (b *Board) pollEvents() chan struct{} {
 				case rune('t'):
 					b.trainGame()
 
+				case rune('g'):
+					b.gitUpdate()
+
 				case rune('n'):
 					boardState = b.newGame()
 

@@ -97,11 +97,17 @@ func (b *Board) Run() chan struct{} {
 
 // =============================================================================
 
+func (b *Board) gitUpdate() {
+	b.printAI("Running Git")
+
+	l := func(format string, v ...any) {}
+	b.ai.GitUpdate(l)
+}
+
 func (b *Board) trainGame() {
 	b.printAI("Training Game")
 
 	l := func(format string, v ...any) {}
-
 	if err := b.ai.ProcessBoardFiles(l); err != nil {
 		b.printAI("Training Game CRLF " + err.Error())
 		return
@@ -196,7 +202,7 @@ func (b *Board) drawEmptyGameBoard() {
 	b.print(10, 1, "Connect 4 AI Version")
 	b.print(0, boardHeight+padTop+1, "   ①    ②    ③    ④    ⑤    ⑥    ⑦")
 
-	b.print(boardWidth+3, padTop-3, "<n> new game   <q> quit game   <t> train game")
+	b.print(boardWidth+3, padTop-3, "<n> new game   <q> quit game   <t> train game   <g> git update")
 
 	screenWidth, _ := b.screen.Size()
 
