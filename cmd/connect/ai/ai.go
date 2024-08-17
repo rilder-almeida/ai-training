@@ -411,9 +411,10 @@ func (ai *AI) ProcessBoardFiles() error {
 		return fmt.Errorf("read training data directory: %w", err)
 	}
 
-	changeFile, err := os.ReadDir(changeLogFile)
-	if err != nil {
-		fmt.Print("no change file present")
+	var changes []string
+	changeFile, err := os.ReadFile(changeLogFile)
+	if err == nil {
+		changes = strings.Split(string(changeFile), "\n")
 	}
 
 	var count int
@@ -435,13 +436,18 @@ func (ai *AI) ProcessBoardFiles() error {
 			}
 
 			// Does this board show up in the change file?
-			for _, dir := range changeFile {
-				if dir.Name() != boardID {
-					continue
+			var found bool
+			for _, id := range changes {
+				if id == boardID {
+
+					found = true
+					break
 				}
 			}
 
-			// We will save a new version of the board.
+			if !found {
+				continue
+			}
 		}
 
 		fmt.Println("-------------------------------------------")
@@ -566,10 +572,16 @@ func (ai *AI) saveBoard(ctx context.Context, board Board) error {
 		Embedding: board.Embedding,
 	}
 
-	var uo options.UpdateOptions
-	if _, err := ai.col.UpdateOne(ctx, filter, d, uo.SetUpsert(true)); err != nil {
+	ai.col.DeleteOne(ctx, filter)
+
+	if _, err := ai.col.InsertOne(ctx, d); err != nil {
 		return fmt.Errorf("insert: %w", err)
 	}
+
+	// var uo options.UpdateOptions
+	// if _, err := ai.col.UpdateOne(ctx, filter, d, uo.SetUpsert(true)); err != nil {
+	// 	return fmt.Errorf("insert: %w", err)
+	// }
 
 	return nil
 }
