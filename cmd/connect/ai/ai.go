@@ -409,7 +409,7 @@ func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, win
 
 // ProcessBoardFiles reads the training data and creates all the vector
 // embeddings, storing that inside the vector database.
-func (ai *AI) ProcessBoardFiles() error {
+func (ai *AI) ProcessBoardFiles(log func(format string, v ...any)) error {
 	files, err := os.ReadDir(trainingDataPath)
 	if err != nil {
 		return fmt.Errorf("read training data directory: %w", err)
@@ -424,7 +424,7 @@ func (ai *AI) ProcessBoardFiles() error {
 	var count int
 	total := len(files)
 
-	fmt.Printf("Found %d documents to process\n", total)
+	log("Found %d documents to process\n", total)
 
 	for _, file := range files {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -454,31 +454,31 @@ func (ai *AI) ProcessBoardFiles() error {
 			}
 		}
 
-		fmt.Println("-------------------------------------------")
-		fmt.Printf("Processing file %d of %d\n", count, total)
+		log("-------------------------------------------\n")
+		log("Processing file %d of %d\n", count, total)
 
-		fmt.Printf("Creating board: %s\n", boardID)
+		log("Creating board: %s\n", boardID)
 
 		board, err := ai.readBoardFromDisk(boardID)
 		if err != nil {
 			return fmt.Errorf("new board: %s: %w", boardID, err)
 		}
 
-		fmt.Printf("Create board embedding: %s\n", boardID)
+		log("Create board embedding: %s\n", boardID)
 
 		board, err = ai.createEmbedding(board)
 		if err != nil {
 			return fmt.Errorf("create embedding: %s: %w", boardID, err)
 		}
 
-		fmt.Printf("Saving board data: %s\n", boardID)
+		log("Saving board data: %s\n", boardID)
 
 		if err := ai.saveBoard(ctx, board); err != nil {
 			return fmt.Errorf("save board: %s: %w", boardID, err)
 		}
 	}
 
-	fmt.Printf("Processing file %d of %d\n", count, total)
+	log("Processing file %d of %d\n", count, total)
 
 	return nil
 }

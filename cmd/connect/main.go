@@ -95,7 +95,11 @@ func training(ai *ai.AI) error {
 	// -------------------------------------------------------------------------
 	// Process any new boards or changes
 
-	err := ai.ProcessBoardFiles()
+	l := func(format string, v ...any) {
+		fmt.Printf(format, v...)
+	}
+
+	err := ai.ProcessBoardFiles(l)
 
 	// -------------------------------------------------------------------------
 	// Ask to delete the change file
