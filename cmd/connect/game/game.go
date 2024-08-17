@@ -74,39 +74,11 @@ func (b *Board) AITurn() BoardState {
 	}
 
 	// -------------------------------------------------------------------------
-	// Before we find a similar board, let's check blue can't win at this point
-	// because we need to train the game to play some basic defense. We won't
-	// use this in the decision making.
+	// Perform some defensive training to start
 
-	for choice := 1; choice <= 7; choice++ {
-		row := -1
-		for i := rows - 1; i >= 0; i-- {
-			cell := b.cells[choice-1][i]
-			if !cell.hasPiece {
-				row = i
-				break
-			}
-		}
-
-		if row != -1 {
-			if b.checkForSpecificWinner(choice, row+1, Players.Blue) {
-				boardData, blueMarkers, _ := b.BoardData()
-				b.ai.SaveBoardData(boardData, blueMarkers, choice, b.winner.String(), false)
-
-				// Let's try to train immediately so it can be used.
-
-				l := func(format string, v ...any) {}
-				if err := b.ai.ProcessBoardFiles(l); err != nil {
-					b.debugMessage = err.Error()
-					return b.ToBoardState()
-				}
-
-				if err := b.ai.DeleteChangeLog(); err != nil {
-					b.debugMessage = err.Error()
-					return b.ToBoardState()
-				}
-			}
-		}
+	if err := b.learnDefense(); err != nil {
+		b.debugMessage = err.Error()
+		return b.ToBoardState()
 	}
 
 	// -------------------------------------------------------------------------
@@ -278,13 +250,9 @@ func (b *Board) UserTurn(column int) BoardState {
 	}
 
 	// -------------------------------------------------------------------------
-	// Save the board to the training data
+	// Perform some training thanks to the blue player
 
-	// Save the board before the user's choice was applied with knowledge if they
-	// won the game or not.
-	blocked := b.checkForSpecificWinner(column+1, row+1, Players.Red)
-	column++
-	if err := b.ai.SaveBoardData(boardData, blueMarkers, column, b.winner.String(), blocked); err != nil {
+	if err := b.learnFromBlue(boardData, blueMarkers, column, row); err != nil {
 		b.debugMessage = err.Error()
 	}
 
@@ -321,6 +289,65 @@ func (b *Board) BoardData() (boardData string, blue int, red int) {
 
 // =============================================================================
 
+func (b *Board) learnFromBlue(boardData string, blueMarkers int, column int, row int) error {
+
+	// We want to see if Blue just blocked Red from winning.
+	blocked := b.checkIfPlayerWins(column+1, row+1, Players.Red)
+
+	// Save the current board in reverse to pretend Red just moved.
+	column++
+	if err := b.ai.SaveBoardData(true, boardData, blueMarkers, column, b.winner.String(), blocked); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *Board) learnDefense() error {
+
+	// -------------------------------------------------------------------------
+	// Before we find a similar board, let's check blue can't win at this point
+	// because we need to train the game to play some basic defense. We won't
+	// use this in the decision making.
+
+	for choice := 1; choice <= 7; choice++ {
+
+		// Which row in the choice column is empty.
+		row := -1
+		for i := rows - 1; i >= 0; i-- {
+			cell := b.cells[choice-1][i]
+			if !cell.hasPiece {
+				row = i
+				break
+			}
+		}
+
+		if row != -1 {
+			if b.checkIfPlayerWins(choice, row+1, Players.Blue) {
+				boardData, _, redMarkers := b.BoardData()
+				b.ai.SaveBoardData(false, boardData, redMarkers, choice, Players.Blue.name, false)
+
+				// Let's try to train immediately so it can be used.
+
+				l := func(format string, v ...any) {}
+				if err := b.ai.ProcessBoardFiles(l); err != nil {
+					return err
+				}
+
+				if err := b.ai.DeleteChangeLog(); err != nil {
+					return err
+				}
+
+				return nil
+			}
+		}
+	}
+
+	return nil
+}
+
+// checkForWinner checks the current board to see if any player won and
+// updates the game state.
 func (b *Board) checkForWinner(colInput int, rowInput int) {
 	defer func() {
 		if b.gameOver {
@@ -341,6 +368,7 @@ func (b *Board) checkForWinner(colInput int, rowInput int) {
 	}
 }
 
+// checkForAnyWinner checks the current board to see if any player won.
 func (b *Board) checkForAnyWinner(colInput int, rowInput int) (bool, Player) {
 	colInput--
 	rowInput--
@@ -510,61 +538,68 @@ stop:
 	return false, Player{}
 }
 
-func (b *Board) checkForSpecificWinner(colInput int, rowInput int, player Player) bool {
+// checkIfPlayerWins makes the specified move and checks if the specified
+// player will win. The move is reversed when the function returns.
+func (b *Board) checkIfPlayerWins(colInput int, rowInput int, player Player) bool {
 	colInput--
 	rowInput--
 
-	save := b.cells[colInput][rowInput].player
+	save := b.cells[colInput][rowInput]
 
 	b.cells[colInput][rowInput].player = player
+	b.cells[colInput][rowInput].hasPiece = true
 	defer func() {
-		b.cells[colInput][rowInput].player = save
+		b.cells[colInput][rowInput] = save
 	}()
 
 	// -------------------------------------------------------------------------
-	// Does Red win in the specified row.
+	// Does the player win in the specified row.
 
-	var red int
+	var counter int
 
 	for col := 0; col < cols; col++ {
 		if !b.cells[col][rowInput].hasPiece {
-			red = 0
+			counter = 0
 			continue
 		}
 
-		if b.cells[col][rowInput].player == Players.Red {
-			red++
+		if b.cells[col][rowInput].player == player {
+			counter++
+		} else {
+			counter = 0
 		}
 
-		if red == 4 {
+		if counter == 4 {
 			return true
 		}
 	}
 
 	// -------------------------------------------------------------------------
-	// Does Red win in the specified column.
+	// Does the player win in the specified column.
 
-	red = 0
+	counter = 0
 
 	for row := 0; row < rows; row++ {
 		if !b.cells[colInput][row].hasPiece {
-			red = 0
+			counter = 0
 			continue
 		}
 
-		if b.cells[colInput][row].player == Players.Red {
-			red++
+		if b.cells[colInput][row].player == player {
+			counter++
+		} else {
+			counter = 0
 		}
 
-		if red == 4 {
+		if counter == 4 {
 			return true
 		}
 	}
 
 	// -------------------------------------------------------------------------
-	// Does Red win in the NW to SE line.
+	// Does the player win in the NW to SE line.
 
-	red = 0
+	counter = 0
 
 	// Walk up in a diagonal until we hit column 0.
 	useRow := rowInput
@@ -578,15 +613,17 @@ func (b *Board) checkForSpecificWinner(colInput int, rowInput int, player Player
 		if !b.cells[useCol][useRow].hasPiece {
 			useCol++
 			useRow++
-			red = 0
+			counter = 0
 			continue
 		}
 
-		if b.cells[useCol][useRow].player == Players.Red {
-			red++
+		if b.cells[useCol][useRow].player == player {
+			counter++
+		} else {
+			counter = 0
 		}
 
-		if red == 4 {
+		if counter == 4 {
 			return true
 		}
 
@@ -595,9 +632,9 @@ func (b *Board) checkForSpecificWinner(colInput int, rowInput int, player Player
 	}
 
 	// -------------------------------------------------------------------------
-	// Is there a winner in the SW to NE line.
+	// Does the player win in the SW to NE line.
 
-	red = 0
+	counter = 0
 
 	// Walk up in a diagonal until we hit column 0.
 	useRow = rowInput
@@ -611,15 +648,17 @@ func (b *Board) checkForSpecificWinner(colInput int, rowInput int, player Player
 		if !b.cells[useCol][useRow].hasPiece {
 			useCol--
 			useRow++
-			red = 0
+			counter = 0
 			continue
 		}
 
-		if b.cells[useCol][useRow].player == Players.Red {
-			red++
+		if b.cells[useCol][useRow].player == player {
+			counter++
+		} else {
+			counter = 0
 		}
 
-		if red == 4 {
+		if counter == 4 {
 			return true
 		}
 

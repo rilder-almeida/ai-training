@@ -293,7 +293,7 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 }
 
 // SaveBoardData knows how to write a board file with the following information.
-func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, winner string, blocked bool) error {
+func (ai *AI) SaveBoardData(reverse bool, boardData string, markers int, lastMove int, winner string, blocked bool) error {
 
 	// In case this will be a new board, this will represent the possible
 	// moves people have made so far when seeing this board configuration.
@@ -307,9 +307,11 @@ func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, win
 
 	// Reverse the board data because we want to pretend the blue player
 	// is playing as red.
-	boardData = strings.ReplaceAll(boardData, "🔵", "R")
-	boardData = strings.ReplaceAll(boardData, "🔴", "🔵")
-	boardData = strings.ReplaceAll(boardData, "R", "🔴")
+	if reverse {
+		boardData = strings.ReplaceAll(boardData, "🔵", "R")
+		boardData = strings.ReplaceAll(boardData, "🔴", "🔵")
+		boardData = strings.ReplaceAll(boardData, "R", "🔴")
+	}
 
 	// Iterate over every file until we find a match or we looked at
 	// everything.
@@ -365,10 +367,14 @@ func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, win
 		fileID = uuid.NewString()
 	}
 
+	// TODO: NEED TO DEAL WITH PLAYER RED/BLUE
+
 	feedback := "Normal-GamePlay"
 	switch {
-	case winner != "" && winner == "Blue":
+	case reverse && winner != "" && winner == "Blue":
 		feedback = "Will-Win"
+	case !reverse && winner != "" && winner == "Blue":
+		feedback = "Blocked-Win"
 	case blocked:
 		feedback = "Blocked-Win"
 	}
@@ -395,7 +401,7 @@ func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, win
 	_, err = fmt.Fprintf(f,
 		template,
 		boardData,
-		blueMarkers,
+		markers,
 		strings.Join(m, ","),
 		feedback)
 
@@ -410,10 +416,10 @@ func (ai *AI) SaveBoardData(boardData string, blueMarkers int, lastMove int, win
 
 // ProcessBoardFiles reads the training data and creates all the vector
 // embeddings, storing that inside the vector database.
-func (ai *AI) ProcessBoardFiles(log func(format string, v ...any)) error {
-	log = func(format string, v ...any) {
+func (ai *AI) ProcessBoardFiles(l func(format string, v ...any)) error {
+	log := func(format string, v ...any) {
 		writeLogf(format, v...)
-		log(format, v...)
+		l(format, v...)
 	}
 
 	files, err := os.ReadDir(trainingDataPath)
@@ -490,10 +496,10 @@ func (ai *AI) ProcessBoardFiles(log func(format string, v ...any)) error {
 }
 
 // GitUpdate takes new files and changes and pushes them to git.
-func (ai *AI) GitUpdate(log func(format string, v ...any)) error {
-	log = func(format string, v ...any) {
+func (ai *AI) GitUpdate(l func(format string, v ...any)) error {
+	log := func(format string, v ...any) {
 		writeLogf(format, v...)
-		log(format, v...)
+		l(format, v...)
 	}
 
 	out, err := exec.Command("git", "add", "-A").CombinedOutput()
