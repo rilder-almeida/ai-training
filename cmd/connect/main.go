@@ -16,7 +16,6 @@ import (
 )
 
 /*
-	- Change list and clean up AI package
 	- Produce images for vectorizing data
 	- Try larger Llama3.1 model: llama3.1:405b
 	- Try Gemma model: gemma2:27b

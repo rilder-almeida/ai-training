@@ -32,11 +32,6 @@ const (
 )
 
 const (
-	colorBlue = "Blue"
-	colorRed  = "Red"
-)
-
-const (
 	dirLeft  = "left"
 	dirRight = "right"
 )
