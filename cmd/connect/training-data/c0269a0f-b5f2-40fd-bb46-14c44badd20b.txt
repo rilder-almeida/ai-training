@@ -6,7 +6,6 @@
 |🔵|🟢|🔵|🔵|🔴|🟢|🔵|
 
 {
-    "winner": "Red",
     "markers": 4,
     "moves": [],
     "feedback": "Won-Game"

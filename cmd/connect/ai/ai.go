@@ -24,7 +24,6 @@ import (
 
 // MetaData represents the metadata that is assoicated with a board.
 type MetaData struct {
-	Winner   string `json:"winner" bson:"winner"`
 	Markers  int    `json:"markers" bson:"markers"`
 	Moves    []int  `json:"moves" bson:"moves"`
 	Feedback string `json:"feedback" bson:"feedback"`
@@ -251,7 +250,6 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 				"board_id": 1,
 				"board":    1,
 				"meta_data": bson.M{
-					"winner":   1,
 					"markers":  1,
 					"moves":    1,
 					"feedback": 1,
@@ -399,16 +397,13 @@ func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int,
 
 	template := `%s
 {
-    "winner": %q,
     "markers": %d,
     "moves": [%s],
     "feedback": %q
 }
 `
 	feedback := "Normal-GamePlay"
-	winner := "None"
 	if gameOver {
-		winner = lastWinner
 		if lastWinner == "Blue" {
 			feedback = "Will-Win"
 		}
@@ -421,7 +416,7 @@ func (ai *AI) SaveBoardData(boardData string, lastWinner string, redMarkers int,
 		m[i] = fmt.Sprintf("%d", v)
 	}
 
-	_, err := fmt.Fprintf(f, template, boardData, winner, redMarkers, strings.Join(m, ","), feedback)
+	_, err := fmt.Fprintf(f, template, boardData, redMarkers, strings.Join(m, ","), feedback)
 	if err != nil {
 		return err
 	}

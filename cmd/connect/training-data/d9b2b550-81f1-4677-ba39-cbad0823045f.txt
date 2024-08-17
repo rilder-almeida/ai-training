@@ -6,7 +6,6 @@
 |🟢|🟢|🔵|🔵|🔴|🔴|🔴|
 
 {
-    "winner": "None",
     "markers": 7,
     "moves": [5],
     "feedback": "Will-Win"

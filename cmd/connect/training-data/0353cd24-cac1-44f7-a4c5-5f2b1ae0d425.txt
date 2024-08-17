@@ -6,7 +6,6 @@
 |🔵|🟢|🔴|🔵|🔴|🟢|🟢|
 
 {
-    "winner": "None",
     "markers": 6,
     "moves": [3],
     "feedback": "Blocked-Win"

@@ -6,7 +6,6 @@
 |🟢|🟢|🔴|🔵|🔵|🔵|🔴|
 
 {
-    "winner": "None",
     "markers": 5,
     "moves": [5,4,2],
     "feedback": "Normal-GamePlay"

@@ -14,8 +14,7 @@ import (
 )
 
 /*
-	- Flip training data for red moves
-	- Figure out how to select a response propmt
+	- Figure out it's a blocking move
 	- Produce images for vectorizing data
 	- Try larger Llama3.1 model: llama3.1:405b
 	- Try Gemma model: gemma2:27b

@@ -6,7 +6,6 @@
 |🔵|🟢|🔴|🔵|🔴|🟢|🟢|
 
 {
-    "winner": "Blue",
     "markers": 6,
     "moves": [],
     "feedback": "Lost-Game"
