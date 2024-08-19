@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/ardanlabs/ai-training/cmd/connect/ai"
@@ -12,6 +14,13 @@ import (
 	"github.com/ardanlabs/ai-training/foundation/mongodb"
 	"github.com/tmc/langchaingo/llms/ollama"
 )
+
+/*
+	- Produce images for vectorizing data
+	- Try larger Llama3.1 model: llama3.1:405b
+	- Try Gemma model: gemma2:27b
+	- Build out all boards with
+*/
 
 var train bool
 
@@ -70,19 +79,52 @@ func run() error {
 	// -------------------------------------------------------------------------
 	// Train or play the game.
 
-	if train {
-		return ai.ProcessBoardFiles()
-	}
+	switch {
+	case train:
+		return training(ai)
 
-	return game(ai)
+	default:
+		return gaming(ai)
+	}
 }
 
 // =============================================================================
 
-func game(ai *ai.AI) error {
+func training(ai *ai.AI) error {
 
 	// -------------------------------------------------------------------------
-	// Create the board and initialize the display.
+	// Process any new boards or changes
+
+	l := func(format string, v ...any) {
+		fmt.Printf(format, v...)
+	}
+
+	err := ai.ProcessBoardFiles(l)
+
+	// -------------------------------------------------------------------------
+	// Ask to delete the change file
+
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("\nDo you want to delete the change file? (y/n) ")
+
+	question, _ := reader.ReadString('\n')
+	if question[:1] != "y" {
+		return err
+	}
+
+	if err := ai.DeleteChangeLog(); err != nil {
+		return err
+	}
+
+	fmt.Println("deleted")
+
+	return err
+}
+
+func gaming(ai *ai.AI) error {
+
+	// -------------------------------------------------------------------------
+	// Create the board and initialize the display
 
 	board, err := board.New(ai)
 	if err != nil {
@@ -91,7 +133,7 @@ func game(ai *ai.AI) error {
 	defer board.Shutdown()
 
 	// -------------------------------------------------------------------------
-	// Start handling board input.
+	// Start handling board input
 
 	<-board.Run()
 

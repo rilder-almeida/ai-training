@@ -5,16 +5,8 @@
 |🟢|🟢|🔴|🔵|🔴|🟢|🟢|
 |🟢|🟢|🔴|🔵|🔴|🟢|🟢|
 
--- State
-Winner: None
-Turn: Blue or Red
-
--- Blue
-Markers: 6
-Moves: (2,3,1)
-Feedback: Normal-GamePlay
-
--- Red
-Markers: 6
-Moves: (3,6,1)
-Feedback: Normal-GamePlay
+{
+    "markers": 6,
+    "moves": [3,6,1],
+    "feedback": "Normal-GamePlay"
+}

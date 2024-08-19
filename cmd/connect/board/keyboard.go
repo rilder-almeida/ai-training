@@ -61,6 +61,12 @@ func (b *Board) pollEvents() chan struct{} {
 			switch keyType {
 			case tcell.KeyRune:
 				switch ev.Rune() {
+				case rune('t'):
+					b.trainGame()
+
+				case rune('g'):
+					b.gitUpdate()
+
 				case rune('n'):
 					boardState = b.newGame()
 

@@ -5,16 +5,8 @@
 |🟢|🟢|🔵|🔴|🔴|🔴|🔵|
 |🔴|🟢|🔵|🔴|🔵|🔵|🔵|
 
--- State
-Winner: None
-Turn: Blue or Red
-
--- Blue
-Markers: 10
-Moves: (3,7)
-Feedback: Will-Win
-
--- Red
-Markers: 10
-Moves: (3,7)
-Feedback: Blocked-Win
+{
+    "markers": 10,
+    "moves": [3,7],
+    "feedback": "Blocked-Win"
+}
