@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/ardanlabs/ai-training/cmd/connect/ai"
 )
@@ -337,6 +338,9 @@ func (b *Board) learnDefense() error {
 				if err := b.ai.DeleteChangeLog(); err != nil {
 					return err
 				}
+
+				// Atlas needs time to update it's indexes.
+				time.Sleep(time.Millisecond * 500)
 
 				return nil
 			}

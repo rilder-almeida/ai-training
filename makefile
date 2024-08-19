@@ -78,7 +78,6 @@ install:
 
 docker:
 	docker pull mongodb/mongodb-atlas-local
-	docker pull ollama/ollama
 	docker pull dyrnq/open-webui:main
 
 # ==============================================================================
