@@ -49,25 +49,25 @@ connect-save:
 # Examples
 
 example1:
-	go run examples/example1/main.go
+	go run cmd/examples/example1/main.go
 
 example2:
-	go run examples/example2/main.go
+	go run cmd/examples/example2/main.go
 
 example3:
-	go run -exec "env DYLD_LIBRARY_PATH=$$GOPATH/src/github.com/ardanlabs/ai-training/foundation/word2vec/libw2v/lib" examples/example3/main.go
+	go run -exec "env DYLD_LIBRARY_PATH=$$GOPATH/src/github.com/ardanlabs/ai-training/foundation/word2vec/libw2v/lib" cmd/examples/example3/main.go
 
 example4:
-	go run examples/example4/main.go
+	go run cmd/examples/example4/main.go
 
 example5:
-	go run examples/example5/main.go
+	go run cmd/examples/example5/main.go
 
 example6:
-	go run examples/example6/main.go
+	go run cmd/examples/example6/main.go
 
 example7:
-	go run examples/example7/main.go
+	go run cmd/examples/example7/main.go
 
 # ==============================================================================
 # Install dependencies
