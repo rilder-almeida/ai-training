@@ -156,6 +156,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	// need to tell the LLM it didn't listen and try again.
 	attempts := 1
 	for ; attempts <= 2; attempts++ {
+		writeLog("------------------")
 		writeLog(prompt)
 
 		// Ask the LLM to choose a column from the training data.
@@ -192,8 +193,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		prompt = fmt.Sprintf(promptPickAgain, prompt, response)
 	}
 
-	writeLogf("\nAttempts: %d", attempts)
-	writeLog("------------------")
+	writeLogf("\nAttempts: %d\n", attempts)
 
 	pick.Attmepts = attempts
 
@@ -251,8 +251,9 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 		return SimilarBoard{}, fmt.Errorf("all: %w", err)
 	}
 
+	writeLog("------------------\nFindSimilarBoard\n")
+	writeLog(boardData)
 	for _, board := range boards {
-		writeLog(boardData)
 		writeLogf("Board: %s: %.2f", board.ID, board.Score*100)
 	}
 
@@ -283,6 +284,7 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 
 	prompt = fmt.Sprintf(prompt, blueMarkerCount, redMarkerCounted, lastMove)
 
+	writeLog("------------------")
 	writeLog(prompt)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
@@ -295,7 +297,7 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 
 	writeLog("Response:")
 	writeLog(response)
-	writeLog("\n------------------")
+	writeLog("\n")
 
 	return response, nil
 }
