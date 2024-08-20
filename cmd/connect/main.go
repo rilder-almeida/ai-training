@@ -20,7 +20,7 @@ import (
 	- Try Gemma model: gemma2:27b
 */
 
-const llmModel = "llama3.1" // llama3.1 gemma2:27b
+const llmModel = "gemma2:27b" // llama3.1 gemma2:27b
 
 var train bool
 

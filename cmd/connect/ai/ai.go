@@ -164,8 +164,10 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		writeLog("Response:")
 		writeLog(response)
 
-		// I had a situation where the response was marked with this character.
+		// I had a situation where the response was marked as ``` and ```json.
 		response = strings.Trim(response, "`")
+		response = strings.TrimPrefix(response, "json")
+
 		if err := json.Unmarshal([]byte(response), &pick); err != nil {
 			return PickResponse{}, fmt.Errorf("unmarshal: %w", err)
 		}
