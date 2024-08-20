@@ -7,6 +7,6 @@
 
 {
     "markers": 1,
-    "moves": [2,5,4],
+    "moves": [2,5],
     "feedback": "Normal-GamePlay"
 }
