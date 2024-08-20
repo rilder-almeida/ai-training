@@ -15,11 +15,6 @@ import (
 	"github.com/tmc/langchaingo/llms/ollama"
 )
 
-/*
-	- Produce images for vectorizing data
-	- Try Gemma model: gemma2:27b
-*/
-
 const llmModel = "gemma2:27b" // llama3.1 gemma2:27b
 
 var train bool

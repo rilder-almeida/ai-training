@@ -115,9 +115,6 @@ ollama-pull:
 	ollama pull llama3.1
 	ollama pull gemma2:27b
 
-ollama-pull-large:
-	ollama pull llama3.1:405b
-
 openwebui:
 	open -a "Google Chrome" http://localhost:3000/
 
