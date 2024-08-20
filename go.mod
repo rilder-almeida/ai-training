@@ -4,6 +4,7 @@ go 1.23.0
 
 require (
 	code.sajari.com/docconv/v2 v2.0.0-pre.4
+	github.com/fogleman/gg v1.3.0
 	github.com/gdamore/tcell/v2 v2.7.4
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-runewidth v0.0.16
@@ -24,6 +25,7 @@ require (
 	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/gigawattio/window v0.0.0-20180317192513-0f5467e35573 // indirect
 	github.com/go-resty/resty/v2 v2.14.0 // indirect
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
@@ -43,6 +45,7 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
+	golang.org/x/image v0.19.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect

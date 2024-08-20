@@ -17,16 +17,15 @@ import (
 
 /*
 	- Produce images for vectorizing data
-	- Try larger Llama3.1 model: llama3.1:405b
 	- Try Gemma model: gemma2:27b
-	- Build out all boards with
 */
+
+const llmModel = "llama3.1" // llama3.1 gemma2:27b
 
 var train bool
 
 func init() {
 	flag.BoolVar(&train, "train", false, "process training data")
-
 	flag.Parse()
 }
 
@@ -61,7 +60,7 @@ func run() error {
 		return fmt.Errorf("ollama: %w", err)
 	}
 
-	chat, err := ollama.New(ollama.WithModel("llama3.1"))
+	chat, err := ollama.New(ollama.WithModel(llmModel))
 	if err != nil {
 		return fmt.Errorf("ollama: %w", err)
 	}

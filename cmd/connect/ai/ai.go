@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -94,11 +95,8 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// TODO: We want to accept an image soon!
-
-	embData := strings.ReplaceAll(boardData, "🔵", "blue")
-	embData = strings.ReplaceAll(embData, "🔴", "red")
-	embData = strings.ReplaceAll(embData, "🟢", "green")
+	image, err := generateImage(boardData)
+	embData := base64.StdEncoding.EncodeToString(image)
 
 	embedding, err := ai.embed.CreateEmbedding(ctx, []string{embData})
 	if err != nil {
