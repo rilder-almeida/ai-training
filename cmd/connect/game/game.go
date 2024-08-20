@@ -77,7 +77,7 @@ func (b *Board) AITurn() BoardState {
 	// -------------------------------------------------------------------------
 	// Perform some defensive training to start
 
-	if err := b.learnDefense(); err != nil {
+	if err := b.learnDefense(Players.Blue); err != nil {
 		b.debugMessage = err.Error()
 		return b.ToBoardState()
 	}
@@ -193,6 +193,14 @@ func (b *Board) UserTurn(column int) BoardState {
 	}
 
 	// -------------------------------------------------------------------------
+	// Perform some defensive training to start
+
+	if err := b.learnDefense(Players.Red); err != nil {
+		b.debugMessage = err.Error()
+		return b.ToBoardState()
+	}
+
+	// -------------------------------------------------------------------------
 	// Capture the current state of the board before the player's choice
 	// is applied.
 
@@ -304,12 +312,16 @@ func (b *Board) learnFromBlue(boardData string, blueMarkers int, column int, row
 	return nil
 }
 
-func (b *Board) learnDefense() error {
+func (b *Board) learnDefense(player Player) error {
 
 	// -------------------------------------------------------------------------
-	// Before we find a similar board, let's check blue can't win at this point
+	// When we pass the Red Player, let's check blue can't win at this point
 	// because we need to train the game to play some basic defense. We won't
 	// use this in the decision making.
+	//
+	// When we pass the Red Player, we want to know if Red can win and the Blue
+	// player just blocked Red from winning. We reverse this board to learn
+	// more defense.
 
 	for choice := 1; choice <= 7; choice++ {
 
@@ -324,25 +336,50 @@ func (b *Board) learnDefense() error {
 		}
 
 		if row != -1 {
-			if b.checkIfPlayerWins(choice, row+1, Players.Blue) {
-				boardData, _, redMarkers := b.BoardData()
-				b.ai.SaveBoardData(false, boardData, redMarkers, choice, Players.Blue.name, false)
+			if player == Players.Blue {
+				if b.checkIfPlayerWins(choice, row+1, Players.Blue) {
+					boardData, _, redMarkers := b.BoardData()
+					b.ai.SaveBoardData(false, boardData, redMarkers, choice, Players.Blue.name, false)
 
-				// Let's try to train immediately so it can be used.
+					// Let's try to train immediately so it can be used.
 
-				l := func(format string, v ...any) {}
-				if err := b.ai.ProcessBoardFiles(l); err != nil {
-					return err
+					l := func(format string, v ...any) {}
+					if err := b.ai.ProcessBoardFiles(l); err != nil {
+						return err
+					}
+
+					if err := b.ai.DeleteChangeLog(); err != nil {
+						return err
+					}
+
+					// Atlas needs time to update it's indexes.
+					time.Sleep(time.Millisecond * 500)
+
+					return nil
 				}
+			}
 
-				if err := b.ai.DeleteChangeLog(); err != nil {
-					return err
+			if player == Players.Red {
+				if b.checkIfPlayerWins(choice, row+1, Players.Red) {
+					boardData, blueMarkers, _ := b.BoardData()
+					b.ai.SaveBoardData(true, boardData, blueMarkers, choice, Players.Blue.name, true)
+
+					// Let's try to train immediately so it can be used.
+
+					l := func(format string, v ...any) {}
+					if err := b.ai.ProcessBoardFiles(l); err != nil {
+						return err
+					}
+
+					if err := b.ai.DeleteChangeLog(); err != nil {
+						return err
+					}
+
+					// Atlas needs time to update it's indexes.
+					time.Sleep(time.Millisecond * 500)
+
+					return nil
 				}
-
-				// Atlas needs time to update it's indexes.
-				time.Sleep(time.Millisecond * 500)
-
-				return nil
 			}
 		}
 	}
