@@ -309,8 +309,7 @@ func (b *Board) learnFromBlue(boardData string, blueMarkers int, column int, row
 	blocked := b.checkIfPlayerWins(column+1, row+1, Players.Red)
 
 	// Save the current board in reverse to pretend Red just moved.
-	column++
-	if err := b.ai.SaveBoardData(true, boardData, blueMarkers, column, b.winner.String(), blocked); err != nil {
+	if err := b.ai.SaveBoardData(true, boardData, blueMarkers, column+1, b.winner.String(), blocked); err != nil {
 		return err
 	}
 
