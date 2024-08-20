@@ -111,12 +111,17 @@ func (b *Board) AITurn() BoardState {
 
 	// If we didn't find a valid column, find an open one.
 	if choice == -1 {
-		for i := range 6 {
-			if !b.cells[i][0].hasPiece {
-				choice = i + 1
+		for col := range 6 {
+			if !b.cells[col][0].hasPiece {
+				choice = col + 1
 				break
 			}
 		}
+	}
+
+	if choice == -1 {
+		b.gameMessage = "all cells are full?"
+		return b.ToBoardState()
 	}
 
 	// Calculate what row (6 - 1) to drop the marker in.
@@ -130,7 +135,7 @@ func (b *Board) AITurn() BoardState {
 	}
 
 	if row == -1 {
-		b.gameMessage = fmt.Sprintf("column is full: %d", choice)
+		b.gameMessage = fmt.Sprintf("not finding a row is impossible: %d", choice)
 		return b.ToBoardState()
 	}
 
