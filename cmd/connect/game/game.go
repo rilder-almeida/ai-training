@@ -353,7 +353,7 @@ func (b *Board) learnDefense(player Player) error {
 					}
 
 					// Atlas needs time to update it's indexes.
-					time.Sleep(time.Millisecond * 500)
+					time.Sleep(time.Second)
 
 					return nil
 				}
@@ -376,7 +376,7 @@ func (b *Board) learnDefense(player Player) error {
 					}
 
 					// Atlas needs time to update it's indexes.
-					time.Sleep(time.Millisecond * 500)
+					time.Sleep(time.Second)
 
 					return nil
 				}
