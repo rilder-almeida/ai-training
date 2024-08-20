@@ -23,6 +23,64 @@ You will find in the source code file for each example notes to help you underst
 
 The makefile has everything you need to get up and running quickly.
 
+## Connect 4
+
+This codebase provides a complete working implementation of Connect 4 where you play against a VectorDB and a LLM. This is a work in progress as well as I learn more. This game requires you install and run a few things such as Docker and Ollama. Follow the instructions to get started.
+
+### Installing Software
+
+Start by installing `mongosh` and `ollama` using Brew. If you don't have Brew installed, I highly recommend it.
+
+```
+make install
+```
+
+Next you want to pull down two images `mongodb/mongodb-atlas-local` and `dyrnq/open-webui:main`.
+
+```
+make docker
+```
+
+With the software installed, you will want to start your Ollama service. Open a terminal and run the following command. This will show logs so start a terminal window you can see but won't need.
+
+```
+make dev-ollama-up
+```
+
+Now start the Mongo and Open Web containers in Docker Compose. Open a new terminal window for this.
+
+```
+make dev-up
+```
+
+Now you need to pull down the models you will be using. Open a new terminal window for this. This might take several minutes depending on your bandwidth.
+
+```
+make ollama-pull
+```
+
+Now you need to train the system so it has some intelligence to play. This will take a few minutes.
+
+```
+make connect-train
+```
+
+You are finally ready to play the game. Give yourself a decent terminal window for the game to load in.
+
+```
+make connect
+```
+
+You are the Blue player and the AI is the Red. You can use the arrow keys to pick a position and then the spacebar, enter, or down arrow key to make your column selection. Wait for your turn and select the column once.
+
+As you finish each game, you can use the <t> command to train the AI from what it learned in the previous game. You will see new files in the `training-data` folder as you play and a `change_log.txt` file. Once you train the system, the `change_log.txt` will be deleted. If you would like to provide me with the new training-data, please reach out. You can always pull the latest code and I am sure new training data will follow.
+
+Anytime you pull a new version of the repo, just run the training command again. You can run that at any time.
+
+```
+make connect-train
+```
+
 ## Licensing
 
 ```

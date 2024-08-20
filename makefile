@@ -42,7 +42,7 @@ connect-train:
 connect-save:
 	git add -A
 	git commit -am "saving training data"
-#	git push
+	git push
 	rm log.txt
 
 # ==============================================================================
