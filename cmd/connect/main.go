@@ -15,7 +15,8 @@ import (
 	"github.com/tmc/langchaingo/llms/ollama"
 )
 
-const llmModel = "gemma2:27b" // llama3.1 gemma2:27b
+const embModel = "mxbai-embed-large" // mxbai-embed-large
+const llmModel = "gemma2:27b"        // llama3.1 gemma2:27b
 
 var train bool
 
@@ -50,7 +51,7 @@ func run() error {
 
 	fmt.Println("Connected to Ollama ...")
 
-	embed, err := ollama.New(ollama.WithModel("mxbai-embed-large"))
+	embed, err := ollama.New(ollama.WithModel(embModel))
 	if err != nil {
 		return fmt.Errorf("ollama: %w", err)
 	}

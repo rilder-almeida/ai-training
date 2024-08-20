@@ -97,9 +97,13 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
 	// image, err := generateImage(boardData)
 	// embData := base64.StdEncoding.EncodeToString(image)
 
-	embData := strings.ReplaceAll(boardData, "🔵", "bluedisk")
-	embData = strings.ReplaceAll(embData, "🔴", "reddisk")
-	embData = strings.ReplaceAll(embData, "🟢", "greendisk")
+	embData := strings.ReplaceAll(boardData, "🔵", "blue")
+	embData = strings.ReplaceAll(embData, "🔴", "red")
+	embData = strings.ReplaceAll(embData, "🟢", "green")
+	embData = strings.ReplaceAll(embData, "\n", "")
+	embData = strings.ReplaceAll(embData, "|", ",")
+	embData = strings.ReplaceAll(embData, ",,", ",")
+	embData = strings.Trim(embData, ",")
 
 	embedding, err := ai.embed.CreateEmbedding(ctx, []string{embData})
 	if err != nil {
