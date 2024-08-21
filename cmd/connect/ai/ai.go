@@ -253,9 +253,18 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 
 	writeLog("------------------\nFindSimilarBoard\n")
 	writeLog(boardData)
+
+	boardID := ai.FindMatchingBoardOnDisk(boardData)
+	if boardID != "" {
+		writeLogf("Board Match: %s", boardID)
+	} else {
+		writeLog("Board Not Found")
+	}
+
 	for _, board := range boards {
 		writeLogf("Board: %s: %.2f", board.ID, board.Score*100)
 	}
+	writeLog("\n")
 
 	return boards[0], nil
 }
@@ -297,9 +306,48 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 
 	writeLog("Response:")
 	writeLog(response)
-	writeLog("\n")
 
 	return response, nil
+}
+
+// FindMatchingBoardOnDisk is used by tooling to see if the specified board
+// already exists in the training data.
+func (ai *AI) FindMatchingBoardOnDisk(boardData string) string {
+	var foundMatch string
+
+	// Iterate over every file until we find a match or we looked at
+	// everything.
+	fn := func(fileName string, dirEntry fs.DirEntry, err error) error {
+		if foundMatch != "" {
+			return errors.New("found match")
+		}
+
+		if err != nil {
+			return fmt.Errorf("walkdir failure: %w", err)
+		}
+
+		if fileName == "." {
+			return nil
+		}
+
+		boardID := strings.TrimSuffix(fileName, ".txt")
+		board, err := ai.readBoardFromDisk(boardID)
+		if err != nil {
+			return fmt.Errorf("reading key file: %w", err)
+		}
+
+		if strings.Compare(boardData, board.Board) == 0 {
+			foundMatch = boardID
+			return errors.New("found match")
+		}
+
+		return nil
+	}
+
+	fsys := os.DirFS(trainingDataPath)
+	fs.WalkDir(fsys, ".", fn)
+
+	return foundMatch
 }
 
 // SaveBoardData knows how to write a board file with the following information.
@@ -385,6 +433,8 @@ func (ai *AI) SaveBoardData(reverse bool, boardData string, markers int, lastMov
 		feedback = "Will-Win"
 	case !reverse && winner != "" && winner == "Blue":
 		feedback = "Blocked-Win"
+	case !reverse && winner != "" && winner == "Red":
+		feedback = "Will-Win"
 	case blocked:
 		feedback = "Blocked-Win"
 	}

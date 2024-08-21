@@ -75,9 +75,9 @@ func (b *Board) AITurn() BoardState {
 	}
 
 	// -------------------------------------------------------------------------
-	// Perform some defensive training to start
+	// Perform some training to start
 
-	if err := b.learnDefense(Players.Blue); err != nil {
+	if err := b.learnWinBlock(); err != nil {
 		b.debugMessage = err.Error()
 		return b.ToBoardState()
 	}
@@ -198,9 +198,9 @@ func (b *Board) UserTurn(column int) BoardState {
 	}
 
 	// -------------------------------------------------------------------------
-	// Perform some defensive training to start
+	// Perform some training to start
 
-	if err := b.learnDefense(Players.Red); err != nil {
+	if err := b.learnWinBlock(); err != nil {
 		b.debugMessage = err.Error()
 		return b.ToBoardState()
 	}
@@ -308,7 +308,8 @@ func (b *Board) learnFromBlue(boardData string, blueMarkers int, column int, row
 	// We want to see if Blue just blocked Red from winning.
 	blocked := b.checkIfPlayerWins(column+1, row+1, Players.Red)
 
-	// Save the current board in reverse to pretend Red just moved.
+	// Save the current board in reverse to teach Red how to block Blue from
+	// winning.
 	if err := b.ai.SaveBoardData(true, boardData, blueMarkers, column+1, b.winner.String(), blocked); err != nil {
 		return err
 	}
@@ -316,76 +317,78 @@ func (b *Board) learnFromBlue(boardData string, blueMarkers int, column int, row
 	return nil
 }
 
-func (b *Board) learnDefense(player Player) error {
+func (b *Board) learnWinBlock() error {
 
-	// -------------------------------------------------------------------------
-	// When we pass the Red Player, let's check blue can't win at this point
-	// because we need to train the game to play some basic defense. We won't
-	// use this in the decision making.
-	//
-	// When we pass the Red Player, we want to know if Red can win and the Blue
-	// player just blocked Red from winning. We reverse this board to learn
-	// more defense.
-
-	for choice := 1; choice <= 7; choice++ {
+	// We will check each column, and use the empty row in that column
+	// for our testing.
+	for choice := 0; choice < 7; choice++ {
 
 		// Which row in the choice column is empty.
+		// Walk it from the bottom up.
 		row := -1
 		for i := rows - 1; i >= 0; i-- {
-			cell := b.cells[choice-1][i]
+			cell := b.cells[choice][i]
 			if !cell.hasPiece {
 				row = i
 				break
 			}
 		}
 
-		if row != -1 {
-			if player == Players.Blue {
-				if b.checkIfPlayerWins(choice, row+1, Players.Blue) {
-					boardData, _, redMarkers := b.BoardData()
-					b.ai.SaveBoardData(false, boardData, redMarkers, choice, Players.Blue.name, false)
-
-					// Let's try to train immediately so it can be used.
-
-					l := func(format string, v ...any) {}
-					if err := b.ai.ProcessBoardFiles(l); err != nil {
-						return err
-					}
-
-					if err := b.ai.DeleteChangeLog(); err != nil {
-						return err
-					}
-
-					// Atlas needs time to update it's indexes.
-					time.Sleep(time.Second)
-
-					return nil
-				}
-			}
-
-			if player == Players.Red {
-				if b.checkIfPlayerWins(choice, row+1, Players.Red) {
-					boardData, blueMarkers, _ := b.BoardData()
-					b.ai.SaveBoardData(true, boardData, blueMarkers, choice, Players.Blue.name, true)
-
-					// Let's try to train immediately so it can be used.
-
-					l := func(format string, v ...any) {}
-					if err := b.ai.ProcessBoardFiles(l); err != nil {
-						return err
-					}
-
-					if err := b.ai.DeleteChangeLog(); err != nil {
-						return err
-					}
-
-					// Atlas needs time to update it's indexes.
-					time.Sleep(time.Second)
-
-					return nil
-				}
-			}
+		// Looks like the entire column is full.
+		if row == -1 {
+			continue
 		}
+
+		// Put a Blue disk in the empty space and see it Blue wins. If they
+		// do, then we save this board where this move means Blue will win.
+		// That will save the board with this choice as a "Blocked-Win.
+
+		if b.checkIfPlayerWins(choice+1, row+1, Players.Blue) {
+			boardData, _, redMarkers := b.BoardData()
+			b.ai.SaveBoardData(false, boardData, redMarkers, choice, Players.Blue.name, false)
+
+			// Let's try to train immediately so it can be used.
+
+			l := func(format string, v ...any) {}
+			if err := b.ai.ProcessBoardFiles(l); err != nil {
+				return err
+			}
+
+			if err := b.ai.DeleteChangeLog(); err != nil {
+				return err
+			}
+
+			// Atlas needs time to update it's indexes.
+			time.Sleep(time.Second)
+
+			return nil
+		}
+
+		// Put a Red disk in the empty space and see it Red wins. If they
+		// do, then we save this board where this move means Red will win.
+		// That will save the board with this choice as a "Will-Win.
+
+		if b.checkIfPlayerWins(choice+1, row+1, Players.Red) {
+			boardData, _, redMarkers := b.BoardData()
+			b.ai.SaveBoardData(false, boardData, redMarkers, choice, Players.Red.name, false)
+
+			// Let's try to train immediately so it can be used.
+
+			l := func(format string, v ...any) {}
+			if err := b.ai.ProcessBoardFiles(l); err != nil {
+				return err
+			}
+
+			if err := b.ai.DeleteChangeLog(); err != nil {
+				return err
+			}
+
+			// Atlas needs time to update it's indexes.
+			time.Sleep(time.Second)
+
+			return nil
+		}
+
 	}
 
 	return nil
@@ -684,6 +687,7 @@ func (b *Board) checkIfPlayerWins(colInput int, rowInput int, player Player) boo
 	// Walk up in a diagonal until we hit column 0.
 	useRow = rowInput
 	useCol = colInput
+
 	for useCol != cols-1 && useRow != 0 {
 		useRow--
 		useCol++
