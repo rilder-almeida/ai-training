@@ -12,16 +12,26 @@ import (
 	"github.com/ardanlabs/ai-training/cmd/connect/ai"
 	"github.com/ardanlabs/ai-training/cmd/connect/board"
 	"github.com/ardanlabs/ai-training/foundation/mongodb"
-	"github.com/tmc/langchaingo/llms/ollama"
 )
 
-const embModel = "mxbai-embed-large" // mxbai-embed-large
-const llmModel = "gemma2:27b"        // llama3.1 gemma2:27b
-
-var train bool
+var (
+	train     bool
+	debug     bool
+	embSystem string
+	embModel  string
+	llmSystem string
+	llmModel  string
+)
 
 func init() {
 	flag.BoolVar(&train, "train", false, "process training data")
+	flag.BoolVar(&debug, "debug", true, "log debug information")
+
+	flag.StringVar(&embSystem, "emb-system", ai.SystemOllama, "which system to use for embedding, default ollama")
+	flag.StringVar(&embModel, "emb-model", "mxbai-embed-large", "which system to use for embedding, defaul mxbai-embed-large")
+	flag.StringVar(&llmSystem, "llm-system", ai.SystemOllama, "which system to use for embedding, default ollama")
+	flag.StringVar(&llmModel, "llm-model", "gemma2:27b", "which system to use for embedding, defaul gemma2:27b")
+
 	flag.Parse()
 }
 
@@ -47,26 +57,21 @@ func run() error {
 	defer client.Disconnect(ctx)
 
 	// -------------------------------------------------------------------------
-	// Open a connection with ollama to access the model.
-
-	fmt.Println("Connected to Ollama ...")
-
-	embed, err := ollama.New(ollama.WithModel(embModel))
-	if err != nil {
-		return fmt.Errorf("ollama: %w", err)
-	}
-
-	chat, err := ollama.New(ollama.WithModel(llmModel))
-	if err != nil {
-		return fmt.Errorf("ollama: %w", err)
-	}
-
-	// -------------------------------------------------------------------------
 	// Construct the AI api.
 
 	fmt.Println("Establish AI support ...")
 
-	ai, err := ai.New(client, embed, chat)
+	embedder, err := ai.CreateEmbedder(embSystem, embModel)
+	if err != nil {
+		return fmt.Errorf("create embedder: %w", err)
+	}
+
+	llm, err := ai.CreateLLM(llmSystem, llmModel)
+	if err != nil {
+		return fmt.Errorf("create llm: %w", err)
+	}
+
+	ai, err := ai.New(client, embedder, llm, debug)
 	if err != nil {
 		return fmt.Errorf("new ai: %w", err)
 	}

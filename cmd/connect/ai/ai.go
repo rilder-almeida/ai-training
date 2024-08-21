@@ -17,28 +17,41 @@ import (
 	"github.com/ardanlabs/ai-training/foundation/mongodb"
 	"github.com/google/uuid"
 	"github.com/tmc/langchaingo/llms"
-	"github.com/tmc/langchaingo/llms/ollama"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// If set to true the package will produce a debug.txt file.
+var debug bool
+
 const (
 	trainingDataPath = "cmd/connect/training-data/"
-	logFile          = "log.txt"
+	logFile          = "debug.txt"
 	changeLogFile    = "change_log.txt"
 )
 
+// Embedder provides support for creating an embedding.
+type Embedder interface {
+	CreateEmbedding(ctx context.Context, inputTexts []string) ([][]float32, error)
+}
+
+// LLM provides support for talking to an LLM.
+type LLM interface {
+	Call(ctx context.Context, prompt string, options ...llms.CallOption) (string, error)
+}
+
 // AI provides support to process connect 4 boards.
 type AI struct {
+	debug  bool
 	client *mongo.Client
 	col    *mongo.Collection
-	embed  *ollama.LLM
-	chat   *ollama.LLM
+	embed  Embedder
+	chat   LLM
 }
 
 // New construct the AI api for use.
-func New(client *mongo.Client, embed *ollama.LLM, chat *ollama.LLM) (*AI, error) {
+func New(client *mongo.Client, embed Embedder, chat LLM, debug bool) (*AI, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -80,6 +93,7 @@ func New(client *mongo.Client, embed *ollama.LLM, chat *ollama.LLM) (*AI, error)
 	// Return the api
 
 	ai := AI{
+		debug:  debug,
 		client: client,
 		col:    col,
 		embed:  embed,
@@ -156,8 +170,8 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	// need to tell the LLM it didn't listen and try again.
 	attempts := 1
 	for ; attempts <= 2; attempts++ {
-		writeLog("------------------")
-		writeLog(prompt)
+		ai.writeLog("------------------")
+		ai.writeLog(prompt)
 
 		// Ask the LLM to choose a column from the training data.
 		response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000), llms.WithTemperature(0.8))
@@ -165,8 +179,8 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 			return PickResponse{}, fmt.Errorf("call: %w", err)
 		}
 
-		writeLog("Response:")
-		writeLog(response)
+		ai.writeLog("Response:")
+		ai.writeLog(response)
 
 		// I had a situation where the response was marked as ``` and ```json.
 		response = strings.Trim(response, "`")
@@ -193,7 +207,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		prompt = fmt.Sprintf(promptPickAgain, prompt, response)
 	}
 
-	writeLogf("\nAttempts: %d\n", attempts)
+	ai.writeLogf("\nAttempts: %d\n", attempts)
 
 	pick.Attmepts = attempts
 
@@ -251,20 +265,20 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 		return SimilarBoard{}, fmt.Errorf("all: %w", err)
 	}
 
-	writeLog("------------------\nFindSimilarBoard\n")
-	writeLog(boardData)
+	ai.writeLog("------------------\nFindSimilarBoard\n")
+	ai.writeLog(boardData)
 
 	boardID := ai.FindMatchingBoardOnDisk(boardData)
 	if boardID != "" {
-		writeLogf("Board Match: %s", boardID)
+		ai.writeLogf("Board Match: %s", boardID)
 	} else {
-		writeLog("Board Not Found")
+		ai.writeLog("Board Not Found")
 	}
 
 	for _, board := range boards {
-		writeLogf("Board: %s: %.2f", board.ID, board.Score*100)
+		ai.writeLogf("Board: %s: %.2f", board.ID, board.Score*100)
 	}
-	writeLog("\n")
+	ai.writeLog("\n")
 
 	return boards[0], nil
 }
@@ -293,8 +307,8 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 
 	prompt = fmt.Sprintf(prompt, blueMarkerCount, redMarkerCounted, lastMove)
 
-	writeLog("------------------")
-	writeLog(prompt)
+	ai.writeLog("------------------")
+	ai.writeLog(prompt)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
@@ -304,8 +318,8 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 		return "", fmt.Errorf("call: %w", err)
 	}
 
-	writeLog("Response:")
-	writeLog(response)
+	ai.writeLog("Response:")
+	ai.writeLog(response)
 
 	return response, nil
 }
@@ -478,7 +492,7 @@ func (ai *AI) SaveBoardData(reverse bool, boardData string, markers int, lastMov
 // embeddings, storing that inside the vector database.
 func (ai *AI) ProcessBoardFiles(l func(format string, v ...any)) error {
 	log := func(format string, v ...any) {
-		writeLogf(format, v...)
+		ai.writeLogf(format, v...)
 		l(format, v...)
 	}
 
@@ -558,7 +572,7 @@ func (ai *AI) ProcessBoardFiles(l func(format string, v ...any)) error {
 // GitUpdate takes new files and changes and pushes them to git.
 func (ai *AI) GitUpdate(l func(format string, v ...any)) error {
 	log := func(format string, v ...any) {
-		writeLogf(format, v...)
+		ai.writeLogf(format, v...)
 		l(format, v...)
 	}
 

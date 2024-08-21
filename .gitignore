@@ -7,13 +7,13 @@
 *.dll
 *.so
 *.dylib
+
 book.embeddings
 db_data/
 ollama/
 openwebui/
-log.txt
+debug.txt
 change_log.txt
-hack/
 
 # Test binary, built with `go test -c`
 *.test

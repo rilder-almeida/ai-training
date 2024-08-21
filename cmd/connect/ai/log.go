@@ -5,14 +5,22 @@ import (
 	"os"
 )
 
-func writeLog(v string) {
+func (ai *AI) writeLog(v string) {
+	if !ai.debug {
+		return
+	}
+
 	f, _ := os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
 	defer f.Close()
 
 	f.WriteString(v + "\n")
 }
 
-func writeLogf(format string, v ...any) {
+func (ai *AI) writeLogf(format string, v ...any) {
+	if !ai.debug {
+		return
+	}
+
 	f, _ := os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
 	defer f.Close()
 
@@ -27,6 +35,12 @@ func writeChangeLog(boardID string) {
 }
 
 // DeleteChangeLog deletes the change log file.
-func (ai *AI) DeleteChangeLog() error {
+func (*AI) DeleteChangeLog() error {
+	f, err := os.Open(changeLogFile)
+	if err != nil {
+		return nil
+	}
+	f.Close()
+
 	return os.Remove(changeLogFile)
 }
