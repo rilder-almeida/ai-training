@@ -345,7 +345,7 @@ func (b *Board) learnWinBlock() error {
 
 		if b.checkIfPlayerWins(choice+1, row+1, Players.Blue) {
 			boardData, _, redMarkers := b.BoardData()
-			b.ai.SaveBoardData(false, boardData, redMarkers, choice, Players.Blue.name, false)
+			b.ai.SaveBoardData(false, boardData, redMarkers, choice+1, Players.Blue.name, false)
 
 			// Let's try to train immediately so it can be used.
 
@@ -370,7 +370,7 @@ func (b *Board) learnWinBlock() error {
 
 		if b.checkIfPlayerWins(choice+1, row+1, Players.Red) {
 			boardData, _, redMarkers := b.BoardData()
-			b.ai.SaveBoardData(false, boardData, redMarkers, choice, Players.Red.name, false)
+			b.ai.SaveBoardData(false, boardData, redMarkers, choice+1, Players.Red.name, false)
 
 			// Let's try to train immediately so it can be used.
 
