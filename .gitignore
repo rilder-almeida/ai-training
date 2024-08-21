@@ -8,10 +8,10 @@
 *.so
 *.dylib
 
-book.embeddings
-db_data/
-ollama/
-openwebui/
+zarf/data/book.embeddings
+zarf/docker/db_data/
+zarf/docker/ollama/
+zarf/docker/openwebui/
 debug.txt
 change_log.txt
 

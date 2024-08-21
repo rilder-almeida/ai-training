@@ -11,7 +11,12 @@ import (
 
 	"github.com/ardanlabs/ai-training/cmd/connect/ai"
 	"github.com/ardanlabs/ai-training/cmd/connect/board"
+	"github.com/ardanlabs/ai-training/cmd/connect/systems/ollama"
 	"github.com/ardanlabs/ai-training/foundation/mongodb"
+)
+
+const (
+	SystemOllama = "ollama"
 )
 
 var (
@@ -27,9 +32,9 @@ func init() {
 	flag.BoolVar(&train, "train", false, "process training data")
 	flag.BoolVar(&debug, "debug", true, "log debug information")
 
-	flag.StringVar(&embSystem, "emb-system", ai.SystemOllama, "which system to use for embedding, default ollama")
+	flag.StringVar(&embSystem, "emb-system", SystemOllama, "which system to use for embedding, default ollama")
 	flag.StringVar(&embModel, "emb-model", "mxbai-embed-large", "which system to use for embedding, defaul mxbai-embed-large")
-	flag.StringVar(&llmSystem, "llm-system", ai.SystemOllama, "which system to use for embedding, default ollama")
+	flag.StringVar(&llmSystem, "llm-system", SystemOllama, "which system to use for embedding, default ollama")
 	flag.StringVar(&llmModel, "llm-model", "gemma2:27b", "which system to use for embedding, defaul gemma2:27b")
 
 	flag.Parse()
@@ -61,14 +66,22 @@ func run() error {
 
 	fmt.Println("Establish AI support ...")
 
-	embedder, err := ai.CreateEmbedder(embSystem, embModel)
-	if err != nil {
-		return fmt.Errorf("create embedder: %w", err)
+	var embedder ai.Embedder
+	switch embSystem {
+	case SystemOllama:
+		embedder, err = ollama.New(embModel)
+		if err != nil {
+			return fmt.Errorf("ollama new: %w", err)
+		}
 	}
 
-	llm, err := ai.CreateLLM(llmSystem, llmModel)
-	if err != nil {
-		return fmt.Errorf("create llm: %w", err)
+	var llm ai.LLM
+	switch llmSystem {
+	case SystemOllama:
+		llm, err = ollama.New(llmModel)
+		if err != nil {
+			return fmt.Errorf("ollama new: %w", err)
+		}
 	}
 
 	ai, err := ai.New(client, embedder, llm, debug)

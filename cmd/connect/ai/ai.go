@@ -33,7 +33,7 @@ const (
 
 // Embedder provides support for creating an embedding.
 type Embedder interface {
-	CreateEmbedding(ctx context.Context, inputTexts []string) ([][]float32, error)
+	CreateEmbedding(ctx context.Context, input []byte) ([]float32, error)
 }
 
 // LLM provides support for talking to an LLM.
@@ -115,12 +115,12 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
 	embData = strings.ReplaceAll(embData, "🔴", "red")
 	embData = strings.ReplaceAll(embData, "🟢", "green")
 
-	embedding, err := ai.embed.CreateEmbedding(ctx, []string{embData})
+	embedding, err := ai.embed.CreateEmbedding(ctx, []byte(embData))
 	if err != nil {
 		return nil, fmt.Errorf("create embedding: %w", err)
 	}
 
-	return embedding[0], nil
+	return embedding, nil
 }
 
 // LLMPick perform a review of the game board and makes a choice.
