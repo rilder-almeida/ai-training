@@ -339,31 +339,6 @@ func (b *Board) learnWinBlock() error {
 			continue
 		}
 
-		// Put a Blue disk in the empty space and see it Blue wins. If they
-		// do, then we save this board where this move means Blue will win.
-		// That will save the board with this choice as a "Blocked-Win.
-
-		if b.checkIfPlayerWins(choice+1, row+1, Players.Blue) {
-			boardData, _, redMarkers := b.BoardData()
-			b.ai.SaveBoardData(false, boardData, redMarkers, choice+1, Players.Blue.name, false)
-
-			// Let's try to train immediately so it can be used.
-
-			l := func(format string, v ...any) {}
-			if err := b.ai.ProcessBoardFiles(l); err != nil {
-				return err
-			}
-
-			if err := b.ai.DeleteChangeLog(); err != nil {
-				return err
-			}
-
-			// Atlas needs time to update it's indexes.
-			time.Sleep(time.Second)
-
-			return nil
-		}
-
 		// Put a Red disk in the empty space and see it Red wins. If they
 		// do, then we save this board where this move means Red will win.
 		// That will save the board with this choice as a "Will-Win.
@@ -389,6 +364,30 @@ func (b *Board) learnWinBlock() error {
 			return nil
 		}
 
+		// Put a Blue disk in the empty space and see it Blue wins. If they
+		// do, then we save this board where this move means Blue will win.
+		// That will save the board with this choice as a "Blocked-Win.
+
+		if b.checkIfPlayerWins(choice+1, row+1, Players.Blue) {
+			boardData, _, redMarkers := b.BoardData()
+			b.ai.SaveBoardData(false, boardData, redMarkers, choice+1, Players.Blue.name, false)
+
+			// Let's try to train immediately so it can be used.
+
+			l := func(format string, v ...any) {}
+			if err := b.ai.ProcessBoardFiles(l); err != nil {
+				return err
+			}
+
+			if err := b.ai.DeleteChangeLog(); err != nil {
+				return err
+			}
+
+			// Atlas needs time to update it's indexes.
+			time.Sleep(time.Second)
+
+			return nil
+		}
 	}
 
 	return nil
