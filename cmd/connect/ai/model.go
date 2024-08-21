@@ -24,8 +24,8 @@ type SimilarBoard struct {
 	Score     float64   `bson:"score"`
 }
 
-// PickResponse provides the LLM's choice for the next move.
-type PickResponse struct {
+// NextMove provides the LLM's choice for the next move.
+type NextMove struct {
 	Column   int
 	Reason   string
 	Attmepts int

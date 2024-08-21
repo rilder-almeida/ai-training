@@ -22,9 +22,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// If set to true the package will produce a debug.txt file.
-var debug bool
-
 const (
 	trainingDataPath = "cmd/connect/training-data/"
 	logFile          = "debug.txt"
@@ -122,8 +119,8 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float64, error) {
 	return embedding, nil
 }
 
-// LLMPick perform a review of the game board and makes a choice.
-func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error) {
+// PickNextMove performs a review of the game board and makes a choice.
+func (ai *AI) PickNextMove(boardData string, board SimilarBoard) (NextMove, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
@@ -154,7 +151,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	// Generate the prompt to use to ask the LLM to pick a column.
 	prompt := fmt.Sprintf(promptPick, strings.Join(m, ","), score, boardData)
 
-	var pick PickResponse
+	var nextMove NextMove
 
 	// The LLM sometimes doesn't pick a column from the list, so we may
 	// need to tell the LLM it didn't listen and try again.
@@ -166,7 +163,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		// Ask the LLM to choose a column from the training data.
 		response, err := ai.chat.Chat(ctx, prompt, llms.WithMaxTokens(5000), llms.WithTemperature(0.8))
 		if err != nil {
-			return PickResponse{}, fmt.Errorf("call: %w", err)
+			return NextMove{}, fmt.Errorf("call: %w", err)
 		}
 
 		ai.writeLog("Response:")
@@ -176,14 +173,14 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		response = strings.Trim(response, "`")
 		response = strings.TrimPrefix(response, "json")
 
-		if err := json.Unmarshal([]byte(response), &pick); err != nil {
-			return PickResponse{}, fmt.Errorf("unmarshal: %w", err)
+		if err := json.Unmarshal([]byte(response), &nextMove); err != nil {
+			return NextMove{}, fmt.Errorf("unmarshal: %w", err)
 		}
 
 		// Did the LLM listen and pick a column from the redMoves list?
 		var found bool
 		for _, v := range board.MetaData.Moves {
-			if v == pick.Column {
+			if v == nextMove.Column {
 				found = true
 				break
 			}
@@ -199,9 +196,9 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 
 	ai.writeLogf("\nAttempts: %d\n", attempts)
 
-	pick.Attmepts = attempts
+	nextMove.Attmepts = attempts
 
-	return pick, nil
+	return nextMove, nil
 }
 
 // FindSimilarBoard performs a vector search to find the most similar board.
@@ -255,20 +252,22 @@ func (ai *AI) FindSimilarBoard(boardData string) (SimilarBoard, error) {
 		return SimilarBoard{}, fmt.Errorf("all: %w", err)
 	}
 
-	ai.writeLog("------------------\nFindSimilarBoard\n")
-	ai.writeLog(boardData)
+	if ai.debug {
+		ai.writeLog("------------------\nFindSimilarBoard\n")
+		ai.writeLog(boardData)
 
-	boardID := ai.FindMatchingBoardOnDisk(boardData)
-	if boardID != "" {
-		ai.writeLogf("Board Match: %s", boardID)
-	} else {
-		ai.writeLog("Board Not Found")
-	}
+		boardID := ai.findBoardOnDisk(boardData)
+		if boardID != "" {
+			ai.writeLogf("Board Match: %s", boardID)
+		} else {
+			ai.writeLog("Board Not Found")
+		}
 
-	for _, board := range boards {
-		ai.writeLogf("Board: %s: %.2f", board.ID, board.Score*100)
+		for _, board := range boards {
+			ai.writeLogf("Board: %s: %.2f", board.ID, board.Score*100)
+		}
+		ai.writeLog("\n")
 	}
-	ai.writeLog("\n")
 
 	return boards[0], nil
 }
@@ -312,46 +311,6 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 	ai.writeLog(response)
 
 	return response, nil
-}
-
-// FindMatchingBoardOnDisk is used by tooling to see if the specified board
-// already exists in the training data.
-func (ai *AI) FindMatchingBoardOnDisk(boardData string) string {
-	var foundMatch string
-
-	// Iterate over every file until we find a match or we looked at
-	// everything.
-	fn := func(fileName string, dirEntry fs.DirEntry, err error) error {
-		if foundMatch != "" {
-			return errors.New("found match")
-		}
-
-		if err != nil {
-			return fmt.Errorf("walkdir failure: %w", err)
-		}
-
-		if fileName == "." {
-			return nil
-		}
-
-		boardID := strings.TrimSuffix(fileName, ".txt")
-		board, err := ai.readBoardFromDisk(boardID)
-		if err != nil {
-			return fmt.Errorf("reading key file: %w", err)
-		}
-
-		if strings.Compare(boardData, board.Board) == 0 {
-			foundMatch = boardID
-			return errors.New("found match")
-		}
-
-		return nil
-	}
-
-	fsys := os.DirFS(trainingDataPath)
-	fs.WalkDir(fsys, ".", fn)
-
-	return foundMatch
 }
 
 // SaveBoardData knows how to write a board file with the following information.
@@ -428,8 +387,6 @@ func (ai *AI) SaveBoardData(reverse bool, boardData string, markers int, lastMov
 	if foundMatch == "" {
 		fileID = uuid.NewString()
 	}
-
-	// TODO: NEED TO DEAL WITH PLAYER RED/BLUE
 
 	feedback := "Normal-GamePlay"
 	switch {
@@ -591,6 +548,44 @@ func (ai *AI) GitUpdate(l func(format string, v ...any)) error {
 }
 
 // =============================================================================
+
+func (ai *AI) findBoardOnDisk(boardData string) string {
+	var foundMatch string
+
+	// Iterate over every file until we find a match or we looked at
+	// everything.
+	fn := func(fileName string, dirEntry fs.DirEntry, err error) error {
+		if foundMatch != "" {
+			return errors.New("found match")
+		}
+
+		if err != nil {
+			return fmt.Errorf("walkdir failure: %w", err)
+		}
+
+		if fileName == "." {
+			return nil
+		}
+
+		boardID := strings.TrimSuffix(fileName, ".txt")
+		board, err := ai.readBoardFromDisk(boardID)
+		if err != nil {
+			return fmt.Errorf("reading key file: %w", err)
+		}
+
+		if strings.Compare(boardData, board.Board) == 0 {
+			foundMatch = boardID
+			return errors.New("found match")
+		}
+
+		return nil
+	}
+
+	fsys := os.DirFS(trainingDataPath)
+	fs.WalkDir(fsys, ".", fn)
+
+	return foundMatch
+}
 
 func (ai *AI) findBoardInDB(ctx context.Context, boardID string) (Board, error) {
 	filter := bson.D{{Key: "board_id", Value: boardID}}

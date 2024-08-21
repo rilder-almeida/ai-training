@@ -96,7 +96,7 @@ func (b *Board) AITurn() BoardState {
 	// -------------------------------------------------------------------------
 	// Use the LLM to Pick
 
-	pick, err := b.ai.LLMPick(boardData, board)
+	pick, err := b.ai.PickNextMove(boardData, board)
 	if err != nil {
 		b.gameMessage = err.Error()
 		return b.ToBoardState()
