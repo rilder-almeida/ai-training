@@ -194,7 +194,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		}
 
 		// Tell the LLM they didn't listen and try again.
-		prompt = fmt.Sprintf(promptPickAgain, prompt, response)
+		prompt = fmt.Sprintf(promptPickAgain, prompt, response, strings.Join(m, ","))
 	}
 
 	ai.writeLogf("\nAttempts: %d\n", attempts)

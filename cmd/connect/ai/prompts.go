@@ -7,7 +7,8 @@ Assistant:
 %s
 
 User:
-You didn't provide a single column number from the list. Please try again.
+You did not respond with a single column number from the list. Please
+only select a column number from this list [%s].
 `
 
 var promptPick = `User:
