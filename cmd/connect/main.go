@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -12,30 +13,33 @@ import (
 	"github.com/ardanlabs/ai-training/cmd/connect/ai"
 	"github.com/ardanlabs/ai-training/cmd/connect/board"
 	"github.com/ardanlabs/ai-training/cmd/connect/systems/ollama"
+	"github.com/ardanlabs/ai-training/cmd/connect/systems/pg"
 	"github.com/ardanlabs/ai-training/foundation/mongodb"
 )
 
 const (
 	SystemOllama = "ollama"
+	SystemPG     = "pg"
 )
 
 var (
-	train     bool
-	debug     bool
-	embSystem string
-	embModel  string
-	llmSystem string
-	llmModel  string
+	train      bool
+	debug      bool
+	embSystem  string
+	embModel   string
+	chatSystem string
+	chatModel  string
 )
 
 func init() {
 	flag.BoolVar(&train, "train", false, "process training data")
 	flag.BoolVar(&debug, "debug", true, "log debug information")
 
-	flag.StringVar(&embSystem, "emb-system", SystemOllama, "which system to use for embedding, default ollama")
-	flag.StringVar(&embModel, "emb-model", "mxbai-embed-large", "which system to use for embedding, defaul mxbai-embed-large")
-	flag.StringVar(&llmSystem, "llm-system", SystemOllama, "which system to use for embedding, default ollama")
-	flag.StringVar(&llmModel, "llm-model", "gemma2:27b", "which system to use for embedding, defaul gemma2:27b")
+	embSystem = SystemOllama
+	embModel = "mxbai-embed-large" // Needed for Ollama but not PG
+
+	chatSystem = SystemOllama
+	chatModel = "gemma2:27b" // llama3.1
 
 	flag.Parse()
 }
@@ -51,7 +55,7 @@ func run() error {
 	defer cancel()
 
 	// -------------------------------------------------------------------------
-	// Connect to mongo.
+	// Connect to mongo
 
 	fmt.Println("Connecting to MongoDB ...")
 
@@ -62,35 +66,42 @@ func run() error {
 	defer client.Disconnect(ctx)
 
 	// -------------------------------------------------------------------------
-	// Construct the AI api.
+	// Construct the AI support
 
 	fmt.Println("Establish AI support ...")
 
 	var embedder ai.Embedder
 	switch embSystem {
 	case SystemOllama:
-		embedder, err = ollama.New(embModel)
+		embedder, err = ollama.NewEmbedder(embModel)
 		if err != nil {
-			return fmt.Errorf("ollama new: %w", err)
+			return fmt.Errorf("ollama embedder: %w", err)
 		}
+
+	case SystemPG:
+		apiKey := os.Getenv("PGKEY")
+		if apiKey == "" {
+			return errors.New("missing PG api key")
+		}
+		embedder = pg.NewEmbedder(apiKey)
 	}
 
-	var llm ai.LLM
-	switch llmSystem {
+	var chat ai.Chatter
+	switch chatSystem {
 	case SystemOllama:
-		llm, err = ollama.New(llmModel)
+		chat, err = ollama.NewChatter(chatModel)
 		if err != nil {
-			return fmt.Errorf("ollama new: %w", err)
+			return fmt.Errorf("ollama chatter: %w", err)
 		}
 	}
 
-	ai, err := ai.New(client, embedder, llm, debug)
+	ai, err := ai.New(client, embedder, chat, debug)
 	if err != nil {
 		return fmt.Errorf("new ai: %w", err)
 	}
 
 	// -------------------------------------------------------------------------
-	// Train or play the game.
+	// Train or play the game
 
 	switch {
 	case train:

@@ -8,6 +8,7 @@ require (
 	github.com/gdamore/tcell/v2 v2.7.4
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-runewidth v0.0.16
+	github.com/predictionguard/go-client v0.14.0
 	github.com/tmc/langchaingo v0.1.12
 	go.mongodb.org/mongo-driver v1.16.1
 	golang.org/x/text v0.17.0

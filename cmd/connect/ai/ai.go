@@ -33,12 +33,12 @@ const (
 
 // Embedder provides support for creating an embedding.
 type Embedder interface {
-	CreateEmbedding(ctx context.Context, input []byte) ([]float32, error)
+	CreateEmbedding(ctx context.Context, input []byte) ([]float64, error)
 }
 
-// LLM provides support for talking to an LLM.
-type LLM interface {
-	Call(ctx context.Context, prompt string, options ...llms.CallOption) (string, error)
+// Chatter provides support for talking to an LLM.
+type Chatter interface {
+	Chat(ctx context.Context, prompt string, options ...llms.CallOption) (string, error)
 }
 
 // AI provides support to process connect 4 boards.
@@ -47,11 +47,11 @@ type AI struct {
 	client *mongo.Client
 	col    *mongo.Collection
 	embed  Embedder
-	chat   LLM
+	chat   Chatter
 }
 
 // New construct the AI api for use.
-func New(client *mongo.Client, embed Embedder, chat LLM, debug bool) (*AI, error) {
+func New(client *mongo.Client, embed Embedder, chat Chatter, debug bool) (*AI, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -104,7 +104,7 @@ func New(client *mongo.Client, embed Embedder, chat LLM, debug bool) (*AI, error
 }
 
 // CalculateEmbedding takes board data and produces a vector embedding.
-func (ai *AI) CalculateEmbedding(boardData string) ([]float32, error) {
+func (ai *AI) CalculateEmbedding(boardData string) ([]float64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -174,7 +174,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 		ai.writeLog(prompt)
 
 		// Ask the LLM to choose a column from the training data.
-		response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000), llms.WithTemperature(0.8))
+		response, err := ai.chat.Chat(ctx, prompt, llms.WithMaxTokens(5000), llms.WithTemperature(0.8))
 		if err != nil {
 			return PickResponse{}, fmt.Errorf("call: %w", err)
 		}
@@ -313,7 +313,7 @@ func (ai *AI) CreateAIResponse(prompt string, blueMarkerCount int, redMarkerCoun
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
-	response, err := ai.chat.Call(ctx, prompt, llms.WithMaxTokens(5000), llms.WithTemperature(0.8))
+	response, err := ai.chat.Chat(ctx, prompt, llms.WithMaxTokens(5000), llms.WithTemperature(0.8))
 	if err != nil {
 		return "", fmt.Errorf("call: %w", err)
 	}

@@ -12,7 +12,7 @@ type Board struct {
 	ID        string    `bson:"board_id"`
 	Board     string    `bson:"board"`
 	MetaData  MetaData  `bson:"meta_data"`
-	Embedding []float32 `bson:"embedding"`
+	Embedding []float64 `bson:"embedding"`
 }
 
 // SimilarBoard represents connect 4 board found in the similarity search.
@@ -20,7 +20,7 @@ type SimilarBoard struct {
 	ID        string    `bson:"board_id"`
 	Board     string    `bson:"board"`
 	MetaData  MetaData  `bson:"meta_data"`
-	Embedding []float32 `bson:"embedding"`
+	Embedding []float64 `bson:"embedding"`
 	Score     float64   `bson:"score"`
 }
 

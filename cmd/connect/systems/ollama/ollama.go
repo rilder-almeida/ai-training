@@ -1,38 +1,70 @@
-// Package ollama provides an implementation that can be used by the system.
+// Package ollama provides an implementation for using ollama.
 package ollama
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/ollama"
 )
 
-// Ollama implements the Embedder and LLM interfaces.
-type Ollama struct {
-	*ollama.LLM
+// Embedder implements the Embedder interface.
+type Embedder struct {
+	llm *ollama.LLM
 }
 
-// New constructs an Ollama value for use by the ai package.
-func New(model string) (*Ollama, error) {
+// NewEmbedder constructs Ollama support for embedding.
+func NewEmbedder(model string) (*Embedder, error) {
 	llm, err := ollama.New(ollama.WithModel(model))
 	if err != nil {
-		return nil, fmt.Errorf("new: %w", err)
+		return nil, fmt.Errorf("embedding: %w", err)
 	}
 
-	ollama := Ollama{
-		llm,
+	embedder := Embedder{
+		llm: llm,
 	}
 
-	return &ollama, nil
+	return &embedder, nil
 }
 
 // CreateEmbedding implements the Embedder interface.
-func (oll *Ollama) CreateEmbedding(ctx context.Context, input []byte) ([]float32, error) {
-	results, err := oll.LLM.CreateEmbedding(ctx, []string{string(input)})
+func (emb *Embedder) CreateEmbedding(ctx context.Context, input []byte) ([]float64, error) {
+	results, err := emb.llm.CreateEmbedding(ctx, []string{string(input)})
 	if err != nil {
 		return nil, fmt.Errorf("create embedding: %w", err)
 	}
 
-	return results[0], nil
+	final := make([]float64, len(results[0]))
+	for i := range results[0] {
+		final[i] = float64(results[0][i])
+	}
+
+	return final, nil
+}
+
+// =============================================================================
+
+// Chatter implements the Chatter interface.
+type Chatter struct {
+	llm *ollama.LLM
+}
+
+// NewEmbedder constructs Ollama support for chatting.
+func NewChatter(model string) (*Chatter, error) {
+	llm, err := ollama.New(ollama.WithModel(model))
+	if err != nil {
+		return nil, fmt.Errorf("embedding: %w", err)
+	}
+
+	chatter := Chatter{
+		llm: llm,
+	}
+
+	return &chatter, nil
+}
+
+// Chat implements the Chatter inteface.
+func (cht *Chatter) Chat(ctx context.Context, prompt string, options ...llms.CallOption) (string, error) {
+	return cht.llm.Call(ctx, prompt, options...)
 }
