@@ -109,7 +109,6 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float64, error) {
 	defer cancel()
 
 	// image, err := generateImage(boardData)
-	// embData := base64.StdEncoding.EncodeToString(image)
 
 	embData := strings.ReplaceAll(boardData, "🔵", "blue")
 	embData = strings.ReplaceAll(embData, "🔴", "red")
@@ -130,28 +129,19 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 
 	// We need the board to look as the LLM expects it to look.
 	// It knows about Red and Yellow disks, so Blue will be Yellow.
-	// | . | . | Y | Y | . | . | . |
-	// | . | . | . | R | . | . | . |
-	// | . | . | . | . | . | . | . |
 
 	boardData = strings.ReplaceAll(boardData, "🟢", " . ")
 	boardData = strings.ReplaceAll(boardData, "🔵", " Y ")
 	boardData = strings.ReplaceAll(boardData, "🔴", " R ")
-
-	// We have to reverse the board so the rows are flipped.
-	rows := strings.Split(boardData, "\n")
-	var grid string
-	for i := 5; i >= 0; i-- {
-		grid = fmt.Sprintf("%s%s\n", grid, rows[i])
-	}
+	boardData = fmt.Sprintf("%s| 1 | 2 | 3 | 4 | 5 | 6 | 7 |", boardData)
 
 	// Format the score to a percentage.
 	score := fmt.Sprintf("%.2f", board.Score*100)
 
-	// Check if Red is starting the game.
-	// We need the AI to randomaly pick a column and it's not good at that.
-	// So we will help it by lowering the score.
-	if len(board.MetaData.Moves) == 7 {
+	// Once there are 4 options, allow the LLM to randomly pick a number.
+	// Prompt: Choose the first number in the list if the score is 100.00 else
+	//         randomly pick a number from the list.
+	if len(board.MetaData.Moves) >= 4 {
 		score = "25.00"
 	}
 
@@ -162,7 +152,7 @@ func (ai *AI) LLMPick(boardData string, board SimilarBoard) (PickResponse, error
 	}
 
 	// Generate the prompt to use to ask the LLM to pick a column.
-	prompt := fmt.Sprintf(promptPick, strings.Join(m, ","), score, grid)
+	prompt := fmt.Sprintf(promptPick, strings.Join(m, ","), score, boardData)
 
 	var pick PickResponse
 

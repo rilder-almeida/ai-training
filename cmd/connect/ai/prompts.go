@@ -36,9 +36,8 @@ Here is the score: %s
 
 Here is the current state of the Game Board.
 
-| 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-
 %s
+
 Question:
 Which column number from the list should the Red player choose and how can that
 column number help them win the game based on the current state of the game board?
