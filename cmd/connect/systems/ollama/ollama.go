@@ -29,8 +29,8 @@ func NewEmbedder(model string) (*Embedder, error) {
 }
 
 // CreateEmbedding implements the Embedder interface.
-func (emb *Embedder) CreateEmbedding(ctx context.Context, input []byte) ([]float64, error) {
-	results, err := emb.llm.CreateEmbedding(ctx, []string{string(input)})
+func (emb *Embedder) CreateEmbedding(ctx context.Context, image []byte, text string) ([]float64, error) {
+	results, err := emb.llm.CreateEmbedding(ctx, []string{text})
 	if err != nil {
 		return nil, fmt.Errorf("create embedding: %w", err)
 	}

@@ -30,7 +30,7 @@ const (
 
 // Embedder provides support for creating an embedding.
 type Embedder interface {
-	CreateEmbedding(ctx context.Context, input []byte) ([]float64, error)
+	CreateEmbedding(ctx context.Context, image []byte, text string) ([]float64, error)
 }
 
 // Chatter provides support for talking to an LLM.
@@ -48,7 +48,7 @@ type AI struct {
 }
 
 // New construct the AI api for use.
-func New(client *mongo.Client, embed Embedder, chat Chatter, debug bool) (*AI, error) {
+func New(client *mongo.Client, embed Embedder, chat Chatter, vecDimension int, debug bool) (*AI, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -77,7 +77,7 @@ func New(client *mongo.Client, embed Embedder, chat Chatter, debug bool) (*AI, e
 
 	const indexName = "vector_index"
 	settings := mongodb.VectorIndexSettings{
-		NumDimensions: 1024,
+		NumDimensions: vecDimension,
 		Path:          "embedding",
 		Similarity:    "cosine",
 	}
@@ -105,13 +105,13 @@ func (ai *AI) CalculateEmbedding(boardData string) ([]float64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// image, err := generateImage(boardData)
+	image, err := generateImage(boardData)
 
-	embData := strings.ReplaceAll(boardData, "🔵", "blue")
-	embData = strings.ReplaceAll(embData, "🔴", "red")
-	embData = strings.ReplaceAll(embData, "🟢", "green")
+	text := strings.ReplaceAll(boardData, "🔵", "blue")
+	text = strings.ReplaceAll(text, "🔴", "red")
+	text = strings.ReplaceAll(text, "🟢", "green")
 
-	embedding, err := ai.embed.CreateEmbedding(ctx, []byte(embData))
+	embedding, err := ai.embed.CreateEmbedding(ctx, image, text)
 	if err != nil {
 		return nil, fmt.Errorf("create embedding: %w", err)
 	}

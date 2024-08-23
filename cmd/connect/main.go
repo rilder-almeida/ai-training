@@ -71,12 +71,15 @@ func run() error {
 	fmt.Println("Establish AI support ...")
 
 	var embedder ai.Embedder
+	var vecDimension int
+
 	switch embSystem {
 	case SystemOllama:
 		embedder, err = ollama.NewEmbedder(embModel)
 		if err != nil {
 			return fmt.Errorf("ollama embedder: %w", err)
 		}
+		vecDimension = 1024
 
 	case SystemPG:
 		apiKey := os.Getenv("PGKEY")
@@ -84,9 +87,11 @@ func run() error {
 			return errors.New("missing PG api key")
 		}
 		embedder = pg.NewEmbedder(apiKey)
+		vecDimension = 512
 	}
 
 	var chat ai.Chatter
+
 	switch chatSystem {
 	case SystemOllama:
 		chat, err = ollama.NewChatter(chatModel)
@@ -95,7 +100,7 @@ func run() error {
 		}
 	}
 
-	ai, err := ai.New(client, embedder, chat, debug)
+	ai, err := ai.New(client, embedder, chat, vecDimension, debug)
 	if err != nil {
 		return fmt.Errorf("new ai: %w", err)
 	}

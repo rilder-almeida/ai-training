@@ -26,10 +26,10 @@ func NewEmbedder(apiKey string) *Embedder {
 }
 
 // CreateEmbedding implements the Embedder interface.
-func (emb *Embedder) CreateEmbedding(ctx context.Context, input []byte) ([]float64, error) {
+func (emb *Embedder) CreateEmbedding(ctx context.Context, image []byte, text string) ([]float64, error) {
 	inp := []client.EmbeddingInput{
 		{
-			Image: newRawImage(input),
+			Image: newRawImage(image),
 		},
 	}
 

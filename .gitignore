@@ -6,7 +6,6 @@
 *.exe~
 *.dll
 *.so
-*.dylib
 
 zarf/data/book.embeddings
 zarf/docker/db_data/

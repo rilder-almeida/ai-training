@@ -19,8 +19,14 @@
 // This example uses a C++ based dynamic library that implements the Google
 // word2vec model service. That dynamic library was pre-built by me. That
 // library can be found under `foundation/word2vec/libw2v/lib/libw2v.dylib`.
+//
 // If you don't want to use that dynamic library, the instructions to build your
 // own version exists here: https://github.com/fogfish/word2vec
+//
+// brew install cmake
+// cd foundation/word2vec/libw2v
+// cmake -DCMAKE_BUILD_TYPE=Release ../libw2v
+// make
 
 package main
 
