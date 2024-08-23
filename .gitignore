@@ -8,9 +8,11 @@
 *.so
 
 zarf/data/book.embeddings
+zarf/data/example3.*
 zarf/docker/db_data/
 zarf/docker/ollama/
 zarf/docker/openwebui/
+
 debug.txt
 change_log.txt
 .env
