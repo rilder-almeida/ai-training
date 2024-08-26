@@ -7,6 +7,7 @@ require (
 	github.com/fogleman/gg v1.3.0
 	github.com/gdamore/tcell/v2 v2.7.4
 	github.com/google/uuid v1.6.0
+	github.com/hegedustibor/htgo-tts v0.0.0-20230402053941-cd8d1a158135
 	github.com/mattn/go-runewidth v0.0.16
 	github.com/predictionguard/go-client v0.14.0
 	github.com/tmc/langchaingo v0.1.12
@@ -28,6 +29,8 @@ require (
 	github.com/go-resty/resty/v2 v2.14.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
+	github.com/hajimehoshi/go-mp3 v0.3.3 // indirect
+	github.com/hajimehoshi/oto/v2 v2.2.0 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/levigross/exp-html v0.0.0-20120902181939-8df60c69a8f5 // indirect

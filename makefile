@@ -75,6 +75,7 @@ example7:
 install:
 	brew install mongosh
 	brew install ollama
+	brew install mplayer
 
 docker:
 	docker pull mongodb/mongodb-atlas-local

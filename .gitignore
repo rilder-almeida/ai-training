@@ -12,6 +12,7 @@ zarf/data/example3.*
 zarf/docker/db_data/
 zarf/docker/ollama/
 zarf/docker/openwebui/
+audio/
 
 debug.txt
 change_log.txt
