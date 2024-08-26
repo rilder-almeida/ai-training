@@ -70,6 +70,9 @@ func (b *Board) pollEvents() chan struct{} {
 				case rune('n'):
 					boardState = b.newGame()
 
+				case rune('s'):
+					b.turnSoundOnOff()
+
 				case rune(' '):
 					if !boardState.GameOver {
 						boardState = b.userTurn()

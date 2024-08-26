@@ -41,6 +41,7 @@ type Chatter interface {
 // AI provides support to process connect 4 boards.
 type AI struct {
 	debug  bool
+	sound  bool
 	client *mongo.Client
 	col    *mongo.Collection
 	embed  Embedder

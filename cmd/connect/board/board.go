@@ -122,6 +122,16 @@ func (b *Board) trainGame() {
 	b.printAI("Training Game CRLF Training Complete")
 }
 
+func (b *Board) turnSoundOnOff() {
+	sound := b.ai.TurnSoundOnOff()
+
+	if sound {
+		b.printAI("Turned Sound On")
+	} else {
+		b.printAI("Turned Sound Off")
+	}
+}
+
 func (b *Board) aiTurn() game.BoardState {
 	b.printAI("RUNNING AI")
 	boardState := b.gameBoard.AITurn()
@@ -204,7 +214,7 @@ func (b *Board) drawEmptyGameBoard() {
 	b.print(10, 1, "Connect 4 AI Version")
 	b.print(0, boardHeight+padTop+1, "   ①    ②    ③    ④    ⑤    ⑥    ⑦")
 
-	b.print(boardWidth+3, padTop-3, "<n> new game   <q> quit game   <t> train game   <g> git update")
+	b.print(boardWidth+3, padTop-3, "<n> new game   <q> quit game   <t> train game   <g> git update   <s> sound")
 
 	screenWidth, _ := b.screen.Size()
 

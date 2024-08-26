@@ -179,7 +179,7 @@ func (b *Board) AITurn() BoardState {
 	}
 
 	b.aiMessage = response
-	b.speak(response)
+	b.ai.Speak(response)
 
 	// Provide final state for display.
 	b.debugMessage = fmt.Sprintf("BOARD: %s CRLF CHOICE: %d - OPTIONS: %v - ATTEMPTS: %d CRLF SCORE: %.2f%% CRLF %s", board.ID, choice, board.MetaData.Moves, pick.Attmepts, board.Score*100, pick.Reason)
