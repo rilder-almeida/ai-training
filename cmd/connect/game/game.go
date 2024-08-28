@@ -1,3 +1,4 @@
+// Package game provides support for game boards and game play.
 package game
 
 import (
@@ -29,6 +30,7 @@ type lastMove struct {
 // Board represents the game board and all its state.
 type Board struct {
 	ai           *ai.AI
+	createdDate  time.Time
 	cells        [cols][rows]cell
 	lastMove     lastMove
 	aiMessage    string
@@ -38,8 +40,8 @@ type Board struct {
 	winner       Player
 }
 
-// New contructs a game board.
-func New(ai *ai.AI) (*Board, error) {
+// NewBoard contructs a game board.
+func NewBoard(ai *ai.AI) (*Board, error) {
 	goingFirst := Players.Blue
 
 	nBig, err := rand.Int(rand.Reader, big.NewInt(100))
@@ -61,6 +63,11 @@ func New(ai *ai.AI) (*Board, error) {
 	}
 
 	return &board, nil
+}
+
+// Since returns how long the board has existed.
+func (b *Board) Since() time.Duration {
+	return time.Since(b.createdDate)
 }
 
 // AITurn plays for the AI.

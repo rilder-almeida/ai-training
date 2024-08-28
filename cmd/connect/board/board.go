@@ -66,7 +66,7 @@ func New(ai *ai.AI) (*Board, error) {
 	style := tcell.StyleDefault
 	style = style.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 
-	gameBoard, err := game.New(ai)
+	gameBoard, err := game.NewBoard(ai)
 	if err != nil {
 		return nil, fmt.Errorf("random number: %w", err)
 	}
@@ -155,7 +155,7 @@ func (b *Board) userTurn() game.BoardState {
 }
 
 func (b *Board) newGame() game.BoardState {
-	gameBoard, _ := game.New(b.ai)
+	gameBoard, _ := game.NewBoard(b.ai)
 
 	*b = Board{
 		ai:        b.ai,

@@ -1,3 +1,4 @@
+// Package ai provides support for interacting with the different AI systems.
 package ai
 
 import (
