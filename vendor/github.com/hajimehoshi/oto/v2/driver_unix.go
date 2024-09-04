@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !android && !darwin && !js && !windows
-// +build !android,!darwin,!js,!windows
+//go:build !android && !darwin && !js && !windows && !nintendosdk
 
 package oto
 
@@ -27,12 +26,12 @@ import (
 	"strings"
 	"sync"
 	"unsafe"
+
+	"github.com/hajimehoshi/oto/v2/internal/mux"
 )
 
 type context struct {
-	sampleRate      int
-	channelCount    int
-	bitDepthInBytes int
+	channelCount int
 
 	suspended bool
 
@@ -40,8 +39,10 @@ type context struct {
 
 	cond *sync.Cond
 
-	players *players
-	err     atomicError
+	mux *mux.Mux
+	err atomicError
+
+	ready chan struct{}
 }
 
 var theContext *context
@@ -105,64 +106,73 @@ func deviceCandidates() []string {
 	return devices
 }
 
-func newContext(sampleRate, channelCount, bitDepthInBytes int) (*context, chan struct{}, error) {
-	ready := make(chan struct{})
-	close(ready)
-
+func newContext(sampleRate int, channelCount int, format mux.Format, bufferSizeInBytes int) (*context, chan struct{}, error) {
 	c := &context{
-		sampleRate:      sampleRate,
-		channelCount:    channelCount,
-		bitDepthInBytes: bitDepthInBytes,
-		cond:            sync.NewCond(&sync.Mutex{}),
-		players:         newPlayers(),
+		channelCount: channelCount,
+		cond:         sync.NewCond(&sync.Mutex{}),
+		mux:          mux.New(sampleRate, channelCount, format),
+		ready:        make(chan struct{}),
 	}
 	theContext = c
 
-	// Open a default ALSA audio device for blocking stream playback
-	type openError struct {
-		device string
-		err    C.int
-	}
-	var openErrs []openError
-	var found bool
-
-	for _, name := range deviceCandidates() {
-		cname := C.CString(name)
-		defer C.free(unsafe.Pointer(cname))
-		if err := C.snd_pcm_open(&c.handle, cname, C.SND_PCM_STREAM_PLAYBACK, 0); err < 0 {
-			openErrs = append(openErrs, openError{
-				device: name,
-				err:    err,
-			})
-			continue
-		}
-		found = true
-		break
-	}
-	if !found {
-		var msgs []string
-		for _, e := range openErrs {
-			msgs = append(msgs, fmt.Sprintf("%q: %s", e.device, C.GoString(C.snd_strerror(e.err))))
-		}
-		return nil, nil, fmt.Errorf("oto: ALSA error at snd_pcm_open: %s", strings.Join(msgs, ", "))
-	}
-
-	periodSize := C.snd_pcm_uframes_t(1024)
-	bufferSize := periodSize * 2
-	if err := c.alsaPcmHwParams(sampleRate, channelCount, &bufferSize, &periodSize); err != nil {
-		return nil, nil, err
-	}
-
 	go func() {
-		buf32 := make([]float32, int(periodSize)*c.channelCount)
-		for {
-			if !c.readAndWrite(buf32) {
-				return
-			}
+		defer close(c.ready)
+
+		// Open a default ALSA audio device for blocking stream playback
+		type openError struct {
+			device string
+			err    C.int
 		}
+		var openErrs []openError
+		var found bool
+
+		for _, name := range deviceCandidates() {
+			cname := C.CString(name)
+			defer C.free(unsafe.Pointer(cname))
+			if err := C.snd_pcm_open(&c.handle, cname, C.SND_PCM_STREAM_PLAYBACK, 0); err < 0 {
+				openErrs = append(openErrs, openError{
+					device: name,
+					err:    err,
+				})
+				continue
+			}
+			found = true
+			break
+		}
+		if !found {
+			var msgs []string
+			for _, e := range openErrs {
+				msgs = append(msgs, fmt.Sprintf("%q: %s", e.device, C.GoString(C.snd_strerror(e.err))))
+			}
+			c.err.TryStore(fmt.Errorf("oto: ALSA error at snd_pcm_open: %s", strings.Join(msgs, ", ")))
+			return
+		}
+
+		// TODO: Should snd_pcm_hw_params_set_periods be called explicitly?
+		const periods = 2
+		var periodSize C.snd_pcm_uframes_t
+		if bufferSizeInBytes != 0 {
+			periodSize = C.snd_pcm_uframes_t(bufferSizeInBytes / (channelCount * 4 * periods))
+		} else {
+			periodSize = C.snd_pcm_uframes_t(1024)
+		}
+		bufferSize := periodSize * periods
+		if err := c.alsaPcmHwParams(sampleRate, channelCount, &bufferSize, &periodSize); err != nil {
+			c.err.TryStore(err)
+			return
+		}
+
+		go func() {
+			buf32 := make([]float32, int(periodSize)*channelCount)
+			for {
+				if !c.readAndWrite(buf32) {
+					return
+				}
+			}
+		}()
 	}()
 
-	return c, ready, nil
+	return c, c.ready, nil
 }
 
 func (c *context) alsaPcmHwParams(sampleRate, channelCount int, bufferSize, periodSize *C.snd_pcm_uframes_t) error {
@@ -212,7 +222,7 @@ func (c *context) readAndWrite(buf32 []float32) bool {
 		return false
 	}
 
-	c.players.read(buf32)
+	c.mux.ReadFloat32s(buf32)
 
 	for len(buf32) > 0 {
 		n := C.snd_pcm_writei(c.handle, unsafe.Pointer(&buf32[0]), C.snd_pcm_uframes_t(len(buf32)/c.channelCount))
@@ -229,6 +239,8 @@ func (c *context) readAndWrite(buf32 []float32) bool {
 }
 
 func (c *context) Suspend() error {
+	<-c.ready
+
 	c.cond.L.Lock()
 	defer c.cond.L.Unlock()
 
@@ -244,6 +256,8 @@ func (c *context) Suspend() error {
 }
 
 func (c *context) Resume() error {
+	<-c.ready
+
 	c.cond.L.Lock()
 	defer c.cond.L.Unlock()
 

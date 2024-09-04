@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -13,13 +12,7 @@ import (
 	"github.com/ardanlabs/ai-training/cmd/connect/ai"
 	"github.com/ardanlabs/ai-training/cmd/connect/board"
 	"github.com/ardanlabs/ai-training/cmd/connect/systems/ollama"
-	"github.com/ardanlabs/ai-training/cmd/connect/systems/pg"
 	"github.com/ardanlabs/ai-training/foundation/mongodb"
-)
-
-const (
-	SystemOllama = "ollama"
-	SystemPG     = "pg"
 )
 
 var (
@@ -34,12 +27,6 @@ var (
 func init() {
 	flag.BoolVar(&train, "train", false, "process training data")
 	flag.BoolVar(&debug, "debug", true, "log debug information")
-
-	embSystem = SystemOllama
-	embModel = "mxbai-embed-large" // Needed for Ollama but not PG
-
-	chatSystem = SystemOllama
-	chatModel = "gemma2:27b" // llama3.1
 
 	flag.Parse()
 }
@@ -70,37 +57,17 @@ func run() error {
 
 	fmt.Println("Establish AI support ...")
 
-	var embedder ai.Embedder
-	var vecDimension int
-
-	switch embSystem {
-	case SystemOllama:
-		embedder, err = ollama.NewEmbedder(embModel)
-		if err != nil {
-			return fmt.Errorf("ollama embedder: %w", err)
-		}
-		vecDimension = 1024
-
-	case SystemPG:
-		apiKey := os.Getenv("PGKEY")
-		if apiKey == "" {
-			return errors.New("missing PG api key")
-		}
-		embedder = pg.NewEmbedder(apiKey)
-		vecDimension = 512
+	embedder, err := ollama.NewEmbedder("mxbai-embed-large")
+	if err != nil {
+		return fmt.Errorf("ollama embedder: %w", err)
 	}
 
-	var chat ai.Chatter
-
-	switch chatSystem {
-	case SystemOllama:
-		chat, err = ollama.NewChatter(chatModel)
-		if err != nil {
-			return fmt.Errorf("ollama chatter: %w", err)
-		}
+	chat, err := ollama.NewChatter("gemma2:27b")
+	if err != nil {
+		return fmt.Errorf("ollama chatter: %w", err)
 	}
 
-	ai, err := ai.New(client, embedder, chat, vecDimension, debug)
+	ai, err := ai.New(client, embedder, chat, 1024, debug)
 	if err != nil {
 		return fmt.Errorf("new ai: %w", err)
 	}

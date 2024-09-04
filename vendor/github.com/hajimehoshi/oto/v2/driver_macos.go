@@ -13,11 +13,58 @@
 // limitations under the License.
 
 //go:build darwin && !ios
-// +build darwin,!ios
 
 package oto
 
-// #cgo LDFLAGS: -framework AppKit
-import "C"
+import (
+	"unsafe"
 
-const bufferSizeInBytes = 2048
+	"github.com/ebitengine/purego"
+	"github.com/ebitengine/purego/objc"
+)
+
+const defaultOneBufferSizeInBytes = 2048
+
+// setNotificationHandler sets a handler for sleep/wake notifications.
+func setNotificationHandler() error {
+	appkit, err := purego.Dlopen("/System/Library/Frameworks/AppKit.framework/Versions/Current/AppKit", purego.RTLD_GLOBAL)
+	if err != nil {
+		return err
+	}
+
+	// Create the Observer object
+	class := objc.AllocateClassPair(objc.GetClass("NSObject"), "OtoNotificationObserver", 0)
+	class.AddMethod(objc.RegisterName("receiveSleepNote:"), objc.NewIMP(setGlobalPause), "v@:@")
+	class.AddMethod(objc.RegisterName("receiveWakeNote:"), objc.NewIMP(setGlobalResume), "v@:@")
+	class.Register()
+
+	observer := objc.ID(class).Send(objc.RegisterName("new"))
+
+	notificationCenter := objc.ID(objc.GetClass("NSWorkspace")).Send(objc.RegisterName("sharedWorkspace")).Send(objc.RegisterName("notificationCenter"))
+
+	// Dlsym returns a pointer to the object so dereference it
+	s, err := purego.Dlsym(appkit, "NSWorkspaceWillSleepNotification")
+	if err != nil {
+		return err
+	}
+
+	notificationCenter.Send(objc.RegisterName("addObserver:selector:name:object:"),
+		observer,
+		objc.RegisterName("receiveSleepNote:"),
+		*(*uintptr)(unsafe.Pointer(s)),
+		0,
+	)
+
+	s, err = purego.Dlsym(appkit, "NSWorkspaceDidWakeNotification")
+	if err != nil {
+		return err
+	}
+
+	notificationCenter.Send(objc.RegisterName("addObserver:selector:name:object:"),
+		observer,
+		objc.RegisterName("receiveWakeNote:"),
+		*(*uintptr)(unsafe.Pointer(s)),
+		0,
+	)
+	return nil
+}

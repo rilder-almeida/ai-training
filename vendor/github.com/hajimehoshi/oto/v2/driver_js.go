@@ -16,27 +16,24 @@ package oto
 
 import (
 	"errors"
-	"reflect"
 	"runtime"
 	"syscall/js"
 	"unsafe"
+
+	"github.com/hajimehoshi/oto/v2/internal/mux"
 )
 
 type context struct {
-	sampleRate      int
-	channelCount    int
-	bitDepthInBytes int
-
 	audioContext            js.Value
 	scriptProcessor         js.Value
 	scriptProcessorCallback js.Func
 	ready                   bool
 	callbacks               map[string]js.Func
 
-	players *players
+	mux *mux.Mux
 }
 
-func newContext(sampleRate int, channelCount int, bitDepthInBytes int) (*context, chan struct{}, error) {
+func newContext(sampleRate int, channelCount int, format mux.Format, bufferSizeInBytes int) (*context, chan struct{}, error) {
 	ready := make(chan struct{})
 
 	class := js.Global().Get("AudioContext")
@@ -50,15 +47,14 @@ func newContext(sampleRate int, channelCount int, bitDepthInBytes int) (*context
 	options.Set("sampleRate", sampleRate)
 
 	d := &context{
-		sampleRate:      sampleRate,
-		channelCount:    channelCount,
-		bitDepthInBytes: bitDepthInBytes,
-		audioContext:    class.New(options),
-		players:         newPlayers(),
+		audioContext: class.New(options),
+		mux:          mux.New(sampleRate, channelCount, format),
 	}
 
-	// 4096 was not great at least on Safari 15.
-	bufferSizeInBytes := 8192 * channelCount
+	if bufferSizeInBytes == 0 {
+		// 4096 was not great at least on Safari 15.
+		bufferSizeInBytes = 8192 * channelCount
+	}
 
 	buf32 := make([]float32, bufferSizeInBytes/4)
 	chBuf32 := make([][]float32, channelCount)
@@ -68,8 +64,8 @@ func newContext(sampleRate int, channelCount int, bitDepthInBytes int) (*context
 
 	// TODO: Use AudioWorklet if available.
 	sp := d.audioContext.Call("createScriptProcessor", bufferSizeInBytes/4/channelCount, 0, channelCount)
-	f := js.FuncOf(func(this js.Value, arguments []js.Value) interface{} {
-		d.players.read(buf32)
+	f := js.FuncOf(func(this js.Value, arguments []js.Value) any {
+		d.mux.ReadFloat32s(buf32)
 		for i := 0; i < channelCount; i++ {
 			for j := range chBuf32[i] {
 				chBuf32[i][j] = buf32[j*channelCount+i]
@@ -97,7 +93,7 @@ func newContext(sampleRate int, channelCount int, bitDepthInBytes int) (*context
 
 	setCallback := func(event string) js.Func {
 		var f js.Func
-		f = js.FuncOf(func(this js.Value, arguments []js.Value) interface{} {
+		f = js.FuncOf(func(this js.Value, arguments []js.Value) any {
 			if !d.ready {
 				d.audioContext.Call("resume")
 				d.ready = true
@@ -136,11 +132,7 @@ func (c *context) Err() error {
 }
 
 func float32SliceToTypedArray(s []float32) js.Value {
-	h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-	h.Len *= 4
-	h.Cap *= 4
-	bs := *(*[]byte)(unsafe.Pointer(h))
-
+	bs := unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s)*4)
 	a := js.Global().Get("Uint8Array").New(len(bs))
 	js.CopyBytesToJS(a, bs)
 	runtime.KeepAlive(s)

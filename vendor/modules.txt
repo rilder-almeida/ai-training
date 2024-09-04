@@ -24,6 +24,13 @@ github.com/araddon/dateparse
 ## explicit; go 1.13
 github.com/dlclark/regexp2
 github.com/dlclark/regexp2/syntax
+# github.com/ebitengine/purego v0.7.1
+## explicit; go 1.18
+github.com/ebitengine/purego
+github.com/ebitengine/purego/internal/cgo
+github.com/ebitengine/purego/internal/fakecgo
+github.com/ebitengine/purego/internal/strings
+github.com/ebitengine/purego/objc
 # github.com/fatih/set v0.2.1
 ## explicit
 github.com/fatih/set
@@ -89,7 +96,7 @@ github.com/golang/snappy
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/hajimehoshi/go-mp3 v0.3.3
+# github.com/hajimehoshi/go-mp3 v0.3.4
 ## explicit; go 1.14
 github.com/hajimehoshi/go-mp3
 github.com/hajimehoshi/go-mp3/internal/bits
@@ -100,9 +107,10 @@ github.com/hajimehoshi/go-mp3/internal/huffman
 github.com/hajimehoshi/go-mp3/internal/imdct
 github.com/hajimehoshi/go-mp3/internal/maindata
 github.com/hajimehoshi/go-mp3/internal/sideinfo
-# github.com/hajimehoshi/oto/v2 v2.2.0
-## explicit; go 1.16
+# github.com/hajimehoshi/oto/v2 v2.4.2
+## explicit; go 1.18
 github.com/hajimehoshi/oto/v2
+github.com/hajimehoshi/oto/v2/internal/mux
 github.com/hajimehoshi/oto/v2/internal/oboe
 # github.com/hegedustibor/htgo-tts v0.0.0-20230402053941-cd8d1a158135
 ## explicit; go 1.17
@@ -145,9 +153,6 @@ github.com/pkg/errors
 # github.com/pkoukk/tiktoken-go v0.1.7
 ## explicit; go 1.19
 github.com/pkoukk/tiktoken-go
-# github.com/predictionguard/go-client v0.14.0
-## explicit; go 1.22.3
-github.com/predictionguard/go-client
 # github.com/richardlehane/mscfb v1.0.4
 ## explicit
 github.com/richardlehane/mscfb
@@ -234,7 +239,7 @@ go.mongodb.org/mongo-driver/x/mongo/driver/wiremessage
 golang.org/x/crypto/ocsp
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
-# golang.org/x/image v0.19.0
+# golang.org/x/image v0.20.0
 ## explicit; go 1.18
 golang.org/x/image/draw
 golang.org/x/image/font
@@ -251,15 +256,15 @@ golang.org/x/net/publicsuffix
 ## explicit; go 1.18
 golang.org/x/sync/errgroup
 golang.org/x/sync/singleflight
-# golang.org/x/sys v0.24.0
+# golang.org/x/sys v0.25.0
 ## explicit; go 1.18
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/term v0.23.0
+# golang.org/x/term v0.24.0
 ## explicit; go 1.18
 golang.org/x/term
-# golang.org/x/text v0.17.0
+# golang.org/x/text v0.18.0
 ## explicit; go 1.18
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap

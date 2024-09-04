@@ -15,28 +15,22 @@
 package oto
 
 import (
+	"github.com/hajimehoshi/oto/v2/internal/mux"
 	"github.com/hajimehoshi/oto/v2/internal/oboe"
 )
 
 type context struct {
-	sampleRate      int
-	channelCount    int
-	bitDepthInBytes int
-
-	players *players
+	mux *mux.Mux
 }
 
-func newContext(sampleRate int, channelCount int, bitDepthInBytes int) (*context, chan struct{}, error) {
+func newContext(sampleRate int, channelCount int, format mux.Format, bufferSizeInBytes int) (*context, chan struct{}, error) {
 	ready := make(chan struct{})
 	close(ready)
 
 	c := &context{
-		sampleRate:      sampleRate,
-		channelCount:    channelCount,
-		bitDepthInBytes: bitDepthInBytes,
-		players:         newPlayers(),
+		mux: mux.New(sampleRate, channelCount, format),
 	}
-	if err := oboe.Play(sampleRate, channelCount, bitDepthInBytes, c.players.read); err != nil {
+	if err := oboe.Play(sampleRate, channelCount, c.mux.ReadFloat32s, bufferSizeInBytes); err != nil {
 		return nil, nil, err
 	}
 	return c, ready, nil

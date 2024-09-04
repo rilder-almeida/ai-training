@@ -26,16 +26,15 @@ import "C"
 
 import (
 	"fmt"
-	"reflect"
 	"unsafe"
 )
 
 var theReadFunc func(buf []float32)
 
-func Play(sampleRate, channelCount, bitDepthInBytes int, readFunc func(buf []float32)) error {
+func Play(sampleRate int, channelCount int, readFunc func(buf []float32), bufferSizeInBytes int) error {
 	// Play can invoke the callback. Set the callback before Play.
 	theReadFunc = readFunc
-	if msg := C.oto_oboe_Play(C.int(sampleRate), C.int(channelCount), C.int(bitDepthInBytes)); msg != nil {
+	if msg := C.oto_oboe_Play(C.int(sampleRate), C.int(channelCount), C.int(bufferSizeInBytes)); msg != nil {
 		return fmt.Errorf("oboe: Play failed: %s", C.GoString(msg))
 	}
 	return nil
@@ -57,10 +56,5 @@ func Resume() error {
 
 //export oto_oboe_read
 func oto_oboe_read(buf *C.float, len C.size_t) {
-	var s []float32
-	h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-	h.Data = uintptr(unsafe.Pointer(buf))
-	h.Len = int(len)
-	h.Cap = int(len)
-	theReadFunc(s)
+	theReadFunc(unsafe.Slice((*float32)(unsafe.Pointer(buf)), len))
 }

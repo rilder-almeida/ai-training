@@ -19,20 +19,22 @@ A low-level library to play sound.
 
 ## Platforms
 
-- Windows
-- macOS
+- Windows (no Cgo required!)
+- macOS (no Cgo required!)
 - Linux
 - FreeBSD
 - OpenBSD
 - Android
 - iOS
 - WebAssembly
+- Nintendo Switch
+- Xbox
 
 ## Prerequisite
 
 On some platforms you will need a C/C++ compiler in your path that Go can use.
 
-- macOS: On newer macOS versions type `clang` on your terminal and a dialog with installation instructions will appear if you don't have it
+- iOS: On newer macOS versions type `clang` on your terminal and a dialog with installation instructions will appear if you don't have it
   - If you get an error with clang use xcode instead `xcode-select --install`
 - Linux and other Unix systems: Should be installed by default, but if not try [GCC](https://gcc.gnu.org/) or [Clang](https://releases.llvm.org/download.html)
 
@@ -55,6 +57,12 @@ ALSA is required. On Ubuntu or Debian, run this command:
 
 ```sh
 apt install libasound2-dev
+```
+
+On RedHat-based linux distributions, run:
+
+```sh
+dnf install alsa-lib-devel
 ```
 
 In most cases this command must be run by root user or through `sudo` command.
@@ -163,8 +171,9 @@ In such cases you might want to stream the file. Luckily this is very simple, ju
 package main
 
 import (
-    "time"
+    "bytes"
     "os"
+    "time"
 
     "github.com/hajimehoshi/go-mp3"
     "github.com/hajimehoshi/oto/v2"
@@ -216,4 +225,7 @@ This works because players implement a `Player` interface and a `BufferSizeSette
 
 ## Crosscompiling
 
-To crosscompile, make sure the libraries for the target architecture are installed, and set `CGO_ENABLED=1` as Go disables [Cgo](https://golang.org/cmd/cgo/#hdr-Using_cgo_with_the_go_command) on crosscompiles by default.
+Crosscompiling to macOS or Windows is as easy as setting `GOOS=darwin` or `GOOS=windows`, respectively.
+
+To crosscompile for other platforms, make sure the libraries for the target architecture are installed, and set 
+`CGO_ENABLED=1` as Go disables [Cgo](https://golang.org/cmd/cgo/#hdr-Using_cgo_with_the_go_command) on crosscompiles by default.
