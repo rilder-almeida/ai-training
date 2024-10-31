@@ -5,47 +5,7 @@ SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 # ==============================================================================
 # Mongo support
 #
-# use connect4
-#
-# db.boards.deleteMany({})
-#
-# db.boards.deleteOne({ board_id: '1f76202b-79a2-4f8e-940b-bc90d29895dc' })
-#
-# db.boards.find({board_id: "fdb01ef2-42ec-4f75-918e-63197434927d"})
-#
 # db.book.find({id: 300})
-
-# ==============================================================================
-# Production support
-# https://chatty-api-3erkmojm3q-uc.a.run.app/v1/chat/completions
-#
-# {
-#   "model": "gemini-1.5-flash-001",
-#   "messages": [
-#     {
-#       "role": "user",
-#       "content": "What is the capital of spain?"
-#     }
-#   ],
-#   "temperature": 0.5,
-#   "top_p": 0.65,
-#   "stream": false
-# }
-
-# ==============================================================================
-# Games
-
-connect:
-	go run cmd/connect/main.go
-
-connect-train:
-	go run cmd/connect/main.go --train true
-
-connect-save:
-	git add -A
-	git commit -am "saving training data"
-	git push
-	rm log.txt
 
 # ==============================================================================
 # Examples
