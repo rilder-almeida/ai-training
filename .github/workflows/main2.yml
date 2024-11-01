@@ -1,0 +1,27 @@
+
+# .github/workflows/syncfork.yml
+
+name: Sync fork repo
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 0'  # Executa a cada 7 dias (domingo)
+  workflow_dispatch: # on button click
+
+jobs:
+  fork_sync:
+    runs-on: ubuntu-latest
+    name: Sync fork repo
+
+    steps:
+      - name: Fetch and merge upstream
+        if: ${{ github.repository == 'ai-training'}}
+        uses: aquelegustavo/forksync@v1.4
+        with:
+          UPSTREAM_USER: ardanlabs #Example: Organization name
+          UPSTREAM_REPO: ai-training #Example: Organization repository
+          FORKED_USER: rilder-almeida #Example: Your account
+          FORKED_REPO: ai-training #Example: Your copy repository
+          USER_TOKEN: ${{secrets.GIT_TOKEN}} #Your personal acess token
+          
