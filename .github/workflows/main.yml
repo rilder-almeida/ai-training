@@ -14,6 +14,7 @@ jobs:
       - uses: zwping/fork-sync@v1.6.5
         with:
           token: ${{ secrets.GIT_TOKEN }}
-          owner: ardanlabs
+          owner: rilder-almeida
+          repo: ai-training
           base: main
           head: main
