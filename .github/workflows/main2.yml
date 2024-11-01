@@ -5,8 +5,8 @@ name: Sync fork repo
 on:
   push:
     branches: [main]
-  # schedule:
-  #   - cron: '0 0 * * 0'  # Executa a cada 7 dias (domingo)
+  schedule:
+    - cron: '0 0 * * 0'  # Executa a cada 7 dias (domingo)
   workflow_dispatch: # on button click
 
 jobs:
