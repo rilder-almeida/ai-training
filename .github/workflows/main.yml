@@ -1,0 +1,19 @@
+name: Sync Fork
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # every week
+  workflow_dispatch: # on button click
+
+jobs:
+  sync:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: zwping/fork-sync@v1.6.5
+        with:
+          token: ${{ secrets.GIT_TOKEN }}
+          owner: fork-sync
+          base: main
+          head: main
