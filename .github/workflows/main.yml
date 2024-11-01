@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Fetch and merge upstream
-        if: ${{ github.repository == 'ai-training'}}
+        if: ${{ github.repository == 'rilder-almeida/ai-training'}}
         uses: aquelegustavo/forksync@v1.4
         with:
           UPSTREAM_USER: ardanlabs #Example: Organization name
