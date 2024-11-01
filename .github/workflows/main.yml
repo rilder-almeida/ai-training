@@ -15,6 +15,5 @@ jobs:
         with:
           token: ${{ secrets.GIT_TOKEN }}
           owner: rilder-almeida
-          repo: ai-training
           base: main
           head: main
